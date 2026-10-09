@@ -54,3 +54,13 @@
  .namespace-resource-list>li{padding:9px 10px}
  .namespace-policy-tags .policy-tag{font-size:8px}
 }
+
+/* Resolve inherited access beside its selector, including grouped endpoints. */
+.inherited-policy{margin-top:8px;padding:10px 12px;border:1px solid #344254;border-radius:7px;background:#151d28;font-size:11px;font-weight:400;overflow-wrap:anywhere}
+.inherited-policy-caption{font-size:10px;color:#8498b2}
+.inherited-policy-row{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.inherited-policy-row+.inherited-policy-row{border-top:1px solid #2d3949;padding-top:8px;margin-top:8px}
+.inherited-policy-row>span{font-size:10px;color:#97a8be}
+.inherited-policy-row>strong{color:#d2dfef;font-size:12px;font-weight:550}
+.inherited-policy-row>small{color:#b2c6df;font-size:11px}
+.policy-mixed-note{margin-top:8px}

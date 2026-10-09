@@ -12,7 +12,7 @@ helm:
   releaseName: kubeshelf
   repo: https://colah16.github.io/KubeShelf
   chart: kubeshelf
-  version: 0.1.4
+  version: 0.1.5
   valuesFiles:
     - values.yaml
 ```
