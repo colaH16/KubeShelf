@@ -10,7 +10,7 @@ export function AppIcon({ icon, name }: { icon: string; name: string }) {
   if (/^https?:\/\//.test(icon)) return <img className="custom-icon" src={icon} alt="" referrerPolicy="no-referrer" />;
   return <C size={25} strokeWidth={1.65} />;
 }
-export function Modal({ title, subtitle, children, onClose, footer }: { title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode }) {
+export function Modal({ title, subtitle, children, onClose, footer, className = '' }: { title: string; subtitle?: string; children: ReactNode; onClose: () => void; footer?: ReactNode; className?: string }) {
   const dialog = useRef<HTMLElement>(null);
   const close = useRef(onClose); close.current = onClose;
   useEffect(() => {
@@ -29,7 +29,7 @@ export function Modal({ title, subtitle, children, onClose, footer }: { title: s
     document.addEventListener('keydown', key);
     return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', key); previous?.focus(); };
   }, []);
-  return <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}><section ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="modal"><header><div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div><button className="icon-button" aria-label="닫기" onClick={onClose}><X size={20}/></button></header><div className="modal-body">{children}</div>{footer && <footer>{footer}</footer>}</section></div>;
+  return <div className="modal-backdrop" onClick={e => { if (e.target === e.currentTarget) onClose(); }}><section ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={'modal ' + className}><header><div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div><button className="icon-button" aria-label="닫기" onClick={onClose}><X size={20}/></button></header><div className="modal-body">{children}</div>{footer && <footer>{footer}</footer>}</section></div>;
 }
 export function PolicyEditor({ value, onChange, directory, inherit = true }: { value?: Policy; onChange: (p: Policy | undefined) => void; directory: Directory; inherit?: boolean }) {
   const toggle = (key: 'groups' | 'users', id: string) => { const list = value?.[key] || []; onChange({ ...value!, [key]: list.includes(id) ? list.filter(x => x !== id) : [...list, id] }); };

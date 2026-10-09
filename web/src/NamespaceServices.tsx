@@ -11,6 +11,7 @@ export default function NamespaceServices({ namespace, cards, settings }: { name
   return <section className="namespace-services" aria-label="네임스페이스의 발견된 서비스">
     <h3>발견된 서비스</h3>
     <p className="muted">이 네임스페이스의 접속 항목입니다. 숨긴 서비스도 포함합니다.</p>
+    <div className="namespace-service-scroll" role="region" aria-label="Ingress 및 NodePort 목록" tabIndex={0}>
     {(['ingress', 'nodeport'] as const).map(kind => {
       const items = entries.filter(({ endpoint }) => endpoint.kind === kind);
       if (!items.length) return null;
@@ -32,5 +33,6 @@ export default function NamespaceServices({ namespace, cards, settings }: { name
       </section>;
     })}
     {!entries.length && <p className="muted">현재 발견된 Ingress·NodePort가 없습니다.</p>}
+    </div>
   </section>;
 }

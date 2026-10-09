@@ -21,3 +21,11 @@
 .namespace-service-address{font-size:11px;color:#abc7e9;margin-bottom:7px}
 .namespace-service-group li>.muted{font-size:10px;line-height:1.7}
 .namespace-service-note{font-size:9px;color:#a4aeBF;margin-top:6px}
+.namespace-modal>header,.namespace-modal>footer{flex-shrink:0}
+.namespace-modal .modal-body{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.namespace-modal .modal-body>p,.namespace-modal .modal-body>.field,.namespace-modal .modal-body>.error-box{flex-shrink:0}
+.namespace-modal .permission-options{max-height:24dvh;overflow-y:auto;overscroll-behavior:contain}
+.namespace-modal .namespace-services{display:flex;flex-direction:column;min-height:0}
+.namespace-services>h3,.namespace-services>p{flex-shrink:0}
+.namespace-service-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:5px}
+.namespace-service-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
