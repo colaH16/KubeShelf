@@ -1,0 +1,113 @@
+name: Publish image and Helm repository
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: kubeshelf-release
+  cancel-in-progress: false
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+  image:
+    needs: checks
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: version
+        shell: bash
+        run: |
+          version=$(awk '/^appVersion:/ {gsub(/"/, "", $2); print $2}' charts/kubeshelf/Chart.yaml)
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo 'Release tag must match Chart.yaml appVersion'; exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            ghcr.io/colah16/kubeshelf:${{ steps.version.outputs.value }}
+            ghcr.io/colah16/kubeshelf:latest
+          build-args: VERSION=${{ steps.version.outputs.value }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/colaH16/KubeShelf
+            org.opencontainers.image.version=${{ steps.version.outputs.value }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+  chart:
+    needs: image
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v3.20.0
+      - name: Package chart and preserve previous versions
+        shell: bash
+        run: |
+          mkdir -p /tmp/helm-site
+          if git show-ref --verify --quiet refs/remotes/origin/gh-pages; then
+            git archive origin/gh-pages | tar -x -C /tmp/helm-site
+          fi
+          helm package charts/kubeshelf --destination /tmp/helm-site
+          helm repo index /tmp/helm-site --url https://colah16.github.io/KubeShelf
+          cp docs/chart-index.html /tmp/helm-site/index.html
+          touch /tmp/helm-site/.nojekyll
+      - name: Keep chart archive on gh-pages
+        shell: bash
+        env:
+          VERSION_REF: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd /tmp/helm-site
+          git init -b gh-pages
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add origin "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY.git"
+          git config http.https://github.com/.extraheader "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          if git ls-remote --exit-code origin refs/heads/gh-pages >/dev/null; then
+            git fetch origin gh-pages
+            git reset --soft FETCH_HEAD
+          fi
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish Helm chart $VERSION_REF"
+            git push origin HEAD:gh-pages
+          fi
+      - run: rm -rf /tmp/helm-site/.git
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: /tmp/helm-site
+  pages:
+    needs: chart
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy public Helm repository
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -1,0 +1,18 @@
+# Public example only. Keep real operating values in your private GitOps repository.
+publicURL: https://apps.example.com
+runtime:
+  existingConfigMap: kubeshelf-settings
+git:
+  url: git@gitea.example.com:operator/kubeshelf-config.git
+  existingSecret: kubeshelf-config-git
+  knownHostsConfigMap: kubeshelf-git-known-hosts
+auth:
+  issuer: https://auth.example.com/application/o/kubeshelf/
+  clientID: kubeshelf
+  adminSubjects: [replace-with-admin-user-uuid]
+  directoryURL: https://auth.example.com
+  existingSecret: kubeshelf-auth
+ingress:
+  enabled: true
+  className: your-ingress-class
+  host: apps.example.com

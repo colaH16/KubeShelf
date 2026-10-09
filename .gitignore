@@ -1,0 +1,12 @@
+web/node_modules/
+internal/webassets/dist/*
+!internal/webassets/dist/.gitkeep
+bin/
+*.log
+.env
+.env.*
+*.key
+*.pem
+*.sshkey
+
+!internal/webassets/dist/placeholder.txt

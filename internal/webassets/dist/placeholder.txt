@@ -1,0 +1,1 @@
+Build web/ before running the application.

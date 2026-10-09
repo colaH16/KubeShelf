@@ -1,0 +1,6 @@
+.git
+web/node_modules
+internal/webassets/dist
+bin
+*.log
+.env*
