@@ -12,9 +12,10 @@ A dashboard that discovers Kubernetes Ingress and NodePort services, alongside y
 - Supports manual services, search, favorites, remembered addresses, copying links, hiding/restoring cards, and an explicit discovery review inbox.
 - Shows namespaces only while they have discovered Ingress or NodePort endpoints. Existing namespaces return automatically when endpoints are added; unconfigured ones remain admin-only until reviewed.
 - Supports optional visitor login through OIDC and an authentik user/group directory. Administrators are identified by stable OIDC subjects, not mutable display names.
+- Separates Ingress and NodePort namespace permissions. NodePorts default to administrator-only, including in existing public namespaces.
 - Filters unauthorized addresses and node information on the server before returning the catalog. This controls dashboard visibility; destination applications still need their own access control.
 
-Namespace visibility dialogs list discovered Ingress names, addresses, backing Services and NodePorts, including hidden services and indicators for visibility overrides. Only the resource list scrolls; visibility controls and Save stay in view.
+Namespace visibility dialogs list discovered Ingress names, addresses, backing Services and NodePorts, including hidden services and indicators for visibility overrides. Ingress and NodePort tabs have independent visibility controls. Compact resource lists and help text scroll while visibility controls and Save stay in view.
 
 ## Local demo
 
@@ -36,7 +37,7 @@ Visit `http://localhost:8080`. The login button opens a demo administrator sessi
 helm repo add kubeshelf https://colah16.github.io/KubeShelf
 helm repo update
 helm upgrade --install kubeshelf kubeshelf/kubeshelf \
-  --version 0.1.3 --namespace public-services --values private-values.yaml
+  --version 0.1.4 --namespace public-services --values private-values.yaml
 ```
 
 See [example values](examples/values.yaml), [chart defaults](charts/kubeshelf/values.yaml) and the [operations guide](docs/operations.md). Production requires an existing runtime ConfigMap, SSH credentials and pinned host keys, OIDC client credentials, and an authentik directory token. These belong in your private GitOps repository.

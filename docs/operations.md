@@ -12,7 +12,7 @@ helm:
   releaseName: kubeshelf
   repo: https://colah16.github.io/KubeShelf
   chart: kubeshelf
-  version: 0.1.3
+  version: 0.1.4
   valuesFiles:
     - values.yaml
 ```
@@ -54,6 +54,7 @@ data:
       "schemaVersion": 1,
       "revision": "initial",
       "namespaces": {},
+      "nodePortNamespaces": {},
       "apps": {},
       "manual": [],
       "targets": [],
@@ -69,7 +70,7 @@ Git working data lives in `emptyDir`. Only one replica is supported, using `Recr
 
 ## Discovery and visibility
 
-Visibility precedence is address override → original service-card override → namespace default. Restricted policies match any selected group or user. Unconfigured namespaces and manual services default to administrator-only. Namespaces without discovered Ingress or NodePort endpoints are automatically omitted from the namespace list and its review count. When endpoints are added to an existing namespace, it returns automatically; newly discovered services appear in the discovery inbox. Stored namespace policies and explicit service reviews are retained while the namespace is absent from the list. Presentation grouping never grants access to an otherwise unauthorized address. Hiding is separate from permission policy.
+Visibility precedence is address override → original service-card override → default for that namespace and exposure type. `namespaces` holds Ingress policies; `nodePortNamespaces` holds independent NodePort policies. A missing NodePort policy defaults to administrator-only, even when the Ingress policy is public. Existing settings without the new map remain valid and retain Ingress permissions. Restricted policies match any selected group or user. Unconfigured namespaces and manual services default to administrator-only. Namespaces without discovered Ingress or NodePort endpoints are automatically omitted from the namespace list and its review count. Ingress and NodePort policies are reviewed independently when that exposure type exists. Adding a NodePort to an Ingress-only namespace with no NodePort policy marks the namespace for review again. When endpoints are added to an existing namespace, it returns automatically; newly discovered services appear in the discovery inbox. Stored namespace policies and explicit service reviews are retained while the namespace is absent from the list. Presentation grouping never grants access to an otherwise unauthorized address. Hiding is separate from permission policy.
 
 Ingresses are grouped by namespace, backend Service and resolved Service port. Each concrete host/path is an address choice. Wildcard hosts, hostless/default backends and regex paths require a real URL. Distinct backends can be grouped explicitly within a section. Kubernetes resource UIDs and Pod rollouts do not reset review status; new addresses and changed routing details do.
 

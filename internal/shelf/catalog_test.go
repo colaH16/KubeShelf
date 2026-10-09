@@ -188,7 +188,11 @@ func TestExistingNamespaceReturnsWhenServicesAreExposed(t *testing.T) {
 				st := EmptySettings()
 				policy := Policy{Mode: "restricted", Groups: []string{"operators"}}
 				if configured {
-					st.Namespaces["existing"] = policy
+					if kind == "nodeport" {
+						st.NodePortNamespaces["existing"] = policy
+					} else {
+						st.Namespaces["existing"] = policy
+					}
 				}
 				base := Snapshot{Connected: true,
 					Namespaces: []core.Namespace{{ObjectMeta: metav1.ObjectMeta{Name: "existing", UID: "same-namespace"}}},
@@ -226,10 +230,14 @@ func TestExistingNamespaceReturnsWhenServicesAreExposed(t *testing.T) {
 					if ns.Configured != configured {
 						t.Fatal("stored namespace review status changed")
 					}
-					if configured && (ns.Policy.Mode != policy.Mode || !contains(ns.Policy.Groups, "operators")) {
+					activePolicy := ns.Policy
+					if kind == "nodeport" {
+						activePolicy = ns.NodePortPolicy
+					}
+					if configured && (activePolicy.Mode != policy.Mode || !contains(activePolicy.Groups, "operators")) {
 						t.Fatal("stored visibility policy was lost")
 					}
-					if !configured && ns.Policy.Mode != "admin" {
+					if !configured && activePolicy.Mode != "admin" {
 						t.Fatal("unconfigured namespace must remain admin-only")
 					}
 					card := findCard(t, cat, service)

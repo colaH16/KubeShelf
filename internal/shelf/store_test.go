@@ -77,7 +77,7 @@ func TestPushDoesNotApplyUntilMountedRevisionArrives(t *testing.T) {
 	if !status.Pending || s.Applied().Revision != before {
 		t.Fatal("push bypassed Fleet application boundary")
 	}
-	if !strings.Contains(gitTest(t, remote, "log", "-1", "--format=%B"), "namespace public-services visibility") {
+	if !strings.Contains(gitTest(t, remote, "log", "-1", "--format=%B"), "namespace public-services Ingress visibility") {
 		t.Fatal("commit omitted settings change")
 	}
 	desired, _ := s.Desired()

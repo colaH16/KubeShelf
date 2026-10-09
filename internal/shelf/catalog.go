@@ -127,7 +127,12 @@ func endpointPolicy(s Settings, e Endpoint) Policy {
 	if a.Visibility != nil {
 		return *a.Visibility
 	}
-	if p, ok := s.Namespaces[e.Namespace]; ok && e.Namespace != "" {
+	// NodePorts expose node addresses and never inherit an Ingress namespace policy.
+	policies := s.Namespaces
+	if e.Kind == "nodeport" {
+		policies = s.NodePortNamespaces
+	}
+	if p, ok := policies[e.Namespace]; ok && e.Namespace != "" {
 		return p
 	}
 	return Policy{Mode: "admin"}
@@ -264,6 +269,7 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 	usedTargets := map[string]bool{}
 	cards := map[string]*Card{}
 	namespaceServices := map[string]map[string]bool{}
+	namespaceKinds := map[string]map[string]int{}
 	ids := make([]string, 0, len(endpoints))
 	for id := range endpoints {
 		ids = append(ids, id)
@@ -273,6 +279,10 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 		e := endpoints[id]
 		if namespaceServices[e.Namespace] == nil {
 			namespaceServices[e.Namespace] = map[string]bool{}
+			namespaceKinds[e.Namespace] = map[string]int{}
+		}
+		if !namespaceServices[e.Namespace][e.AppID] {
+			namespaceKinds[e.Namespace][e.Kind]++
 		}
 		namespaceServices[e.Namespace][e.AppID] = true
 		a := s.Apps[e.AppID]
@@ -382,7 +392,13 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 			if !ok {
 				p = Policy{Mode: "admin"}
 			}
-			out.Namespaces = append(out.Namespaces, NamespaceInfo{Name: n.Name, Configured: ok, Services: len(namespaceServices[n.Name]), Policy: p})
+			np, nodePortConfigured := s.NodePortNamespaces[n.Name]
+			if !nodePortConfigured {
+				np = Policy{Mode: "admin"}
+			}
+			ingressCount, nodePortCount := namespaceKinds[n.Name]["ingress"], namespaceKinds[n.Name]["nodeport"]
+			configured := (ingressCount == 0 || ok) && (nodePortCount == 0 || nodePortConfigured)
+			out.Namespaces = append(out.Namespaces, NamespaceInfo{Name: n.Name, Configured: configured, Services: len(namespaceServices[n.Name]), Policy: p, IngressConfigured: ok, IngressServices: ingressCount, NodePortConfigured: nodePortConfigured, NodePortServices: nodePortCount, NodePortPolicy: np})
 		}
 		sort.Slice(out.Namespaces, func(i, j int) bool { return out.Namespaces[i].Name < out.Namespaces[j].Name })
 	}
@@ -393,7 +409,18 @@ func changeSummary(old, next Settings) string {
 	for ns, p := range next.Namespaces {
 		before, ok := old.Namespaces[ns]
 		if !ok || !reflect.DeepEqual(before, p) {
-			parts = append(parts, "namespace "+ns+" visibility")
+			parts = append(parts, "namespace "+ns+" Ingress visibility")
+		}
+	}
+	for ns, p := range next.NodePortNamespaces {
+		before, ok := old.NodePortNamespaces[ns]
+		if !ok || !reflect.DeepEqual(before, p) {
+			parts = append(parts, "namespace "+ns+" NodePort visibility")
+		}
+	}
+	for ns := range old.NodePortNamespaces {
+		if _, ok := next.NodePortNamespaces[ns]; !ok {
+			parts = append(parts, "namespace "+ns+" NodePort visibility reset")
 		}
 	}
 	for id, a := range next.Apps {

@@ -4,28 +4,53 @@
 @media(max-width:760px){.sidebar{transform:translateX(-100%);transition:transform .2s;width:235px}.sidebar.expanded{transform:translateX(0)}.sidebar-shade{display:block;position:fixed;inset:0;background:#0008;z-index:19}.content-shell{margin:0;width:100%}.topbar{height:61px;padding:0 19px;gap:13px}.breadcrumb{margin-right:auto;font-size:10px}.mobile-menu{display:inline-grid}.top-actions{gap:9px}.top-avatar{display:none}.admin-badge{font-size:9px}main{padding:27px 20px 20px}.page-heading{margin-bottom:24px;gap:10px}.page-heading h1{font-size:27px}.page-heading p{font-size:10px}.eyebrow{font-size:7px;letter-spacing:1.5px}.page-heading .button{padding:9px 10px;font-size:10px}.toolbar{gap:10px;margin-bottom:24px}.toolbar-info{display:none}.search{width:100%}.section-heading{flex-wrap:wrap;margin-bottom:12px}.node-control{max-width:100%;margin-left:auto}.card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.service-card{padding:10px 12px 9px}.card-main{gap:9px;padding:12px 0 15px}.app-icon{width:35px;height:35px;border-radius:9px}.app-icon svg{width:21px}.card-main h3{font-size:11px}.card-main p{font-size:8px}.card-address{font-size:8px}.card-address select{font-size:8px}.card-controls .icon-button{padding:3px}.card-edit,.card-address .copy{opacity:1}.card-badges{gap:3px}.new-badge{font-size:6px;padding:1px 4px}.card-note{font-size:7px}.page-footer{font-size:8px;align-items:flex-start;flex-direction:column;gap:8px;margin-top:30px}.modal-backdrop{padding:10px}.modal{max-height:calc(100dvh - 20px);border-radius:12px}.modal>header{padding:18px}.modal-body{padding:19px 18px}.modal>footer{padding:14px 15px;align-items:flex-end}.save-note{font-size:8px;max-width:75px}.footer-actions{gap:5px}.footer-actions .button{font-size:10px;padding:9px}.address-edit{grid-template-columns:85px 1fr 22px;gap:5px}.namespace-row{padding:13px 12px;gap:10px}.namespace-row strong{font-size:10px}.namespace-row small{font-size:9px}.namespace-icon{height:32px;width:32px}.namespace-row .policy-tag{font-size:8px}.namespace-row>svg{display:none}.notice-bar code{display:none}}
 @media(max-width:380px){.card-grid{grid-template-columns:1fr}.top-actions .admin-badge{display:none}.permission-options,.two-fields{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-/* Namespace policy review keeps resource details inside the dialog. */
-.namespace-services{border-top:1px solid #323b4a;padding-top:20px}
-.namespace-services h3{font-size:13px;font-weight:600;color:#d7deeb;margin-bottom:5px}
-.namespace-services>p{font-size:11px;line-height:1.7}
-.namespace-service-group{margin-top:18px}
-.namespace-service-group h4{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:550;color:#b6c5da;margin:0 0 8px}
-.namespace-service-group h4>span{margin-left:auto;font-size:10px;color:#8c9bb0;font-weight:400}
-.namespace-service-group ul{list-style:none;margin:0;padding:0;border:1px solid #354153;border-radius:9px;overflow:hidden;background:#171e28}
-.namespace-service-group li{padding:13px 14px;border-bottom:1px solid #303a49;min-width:0;overflow-wrap:anywhere}
-.namespace-service-group li:last-child{border-bottom:0}
-.namespace-service-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px}
-.namespace-service-title strong{font-size:12px;font-weight:550;color:#d0dbec}
-.namespace-service-title>span{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:#9caac0}
-.namespace-service-title>.local-badge{color:#baa4db}
-.namespace-service-address{font-size:11px;color:#abc7e9;margin-bottom:7px}
-.namespace-service-group li>.muted{font-size:10px;line-height:1.7}
-.namespace-service-note{font-size:9px;color:#a4aeBF;margin-top:6px}
-.namespace-modal>header,.namespace-modal>footer{flex-shrink:0}
-.namespace-modal .modal-body{display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.namespace-modal .modal-body>p,.namespace-modal .modal-body>.field,.namespace-modal .modal-body>.error-box{flex-shrink:0}
-.namespace-modal .permission-options{max-height:24dvh;overflow-y:auto;overscroll-behavior:contain}
-.namespace-modal .namespace-services{display:flex;flex-direction:column;min-height:0}
-.namespace-services>h3,.namespace-services>p{flex-shrink:0}
-.namespace-service-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:5px}
+/* Keep namespace controls fixed; descriptions and resources share the scroll area. */
+.namespace-modal{height:min(780px,calc(100dvh - 48px))}
+.namespace-modal>header,.namespace-modal>footer{flex-shrink:0;padding:14px 20px}
+.namespace-modal h2{font-size:17px}
+.namespace-modal>header p{font-size:11px}
+.namespace-modal .modal-body{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden;padding:14px 20px}
+.namespace-modal .modal-body>.error-box{flex-shrink:0;max-height:120px;overflow:auto}
+.namespace-policy-editor,.namespace-policy-panel,.namespace-services{display:flex;flex:1;flex-direction:column;min-height:0}
+.namespace-kind-tabs{display:flex;gap:6px;flex-shrink:0;margin-bottom:12px}
+.namespace-kind-tabs>button{display:flex;align-items:center;justify-content:center;gap:7px;flex:1;min-height:35px;border:1px solid #354153;border-radius:7px;color:#9eacc0;font-size:12px;background:#171e28}
+.namespace-kind-tabs>button[aria-selected=true]{color:#f0bd87;border-color:#8f7352;background:#393027}
+.namespace-kind-tabs>button>span{font-size:10px;opacity:.8}
+.namespace-policy-controls{flex-shrink:0;padding-bottom:12px;border-bottom:1px solid #323b4a}
+.namespace-policy-caption{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;color:#a7b5c9;margin-bottom:6px;min-height:19px}
+.namespace-policy-controls .policy-editor>select{font-size:12px;padding:8px 10px;min-height:37px}
+.permission-disclosure{margin-top:7px;font-size:11px;color:#acbbcf}
+.permission-disclosure>summary{cursor:pointer;padding:3px 0}
+.permission-disclosure>summary>span{color:#f0bd87;margin-left:5px}
+.namespace-modal .permission-options{max-height:20dvh;overflow-y:auto;overscroll-behavior:contain;padding:10px;gap:10px;margin-top:6px}
+.namespace-modal .permission-options .field-caption{margin-bottom:5px}
+.namespace-modal .permission-options>p{display:none}
+.namespace-service-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:4px}
 .namespace-service-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.namespace-list-help{font-size:10px;line-height:1.6;color:#8f9cb0;padding:10px 0}
+.namespace-resource-list{list-style:none;margin:0;padding:0;border:1px solid #354153;border-radius:8px;overflow:hidden;background:#171e28}
+.namespace-resource-list:empty{display:none}
+.namespace-resource-list>li{padding:10px 11px;border-bottom:1px solid #303a49;min-width:0;overflow-wrap:anywhere}
+.namespace-resource-list>li:last-child{border-bottom:0}
+.namespace-service-title{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:3px}
+.namespace-service-title strong{font-size:12px;font-weight:550;color:#d0dbec}
+.namespace-service-title>span{display:inline-flex;align-items:center;gap:3px;font-size:9px;color:#9caac0}
+.namespace-service-title>.local-badge{color:#baa4db}
+.namespace-service-address{font-size:11px;color:#abc7e9}
+.namespace-resource-list li>.muted{font-size:10px;line-height:1.5;margin-top:3px}
+.namespace-service-note{font-size:9px;color:#a4aebf;margin-top:4px}
+.namespace-policy-tags{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.namespace-modal .save-note{font-size:10px;max-width:none}
+@media(max-width:760px){
+ .namespace-modal{height:calc(100dvh - 20px)}
+ .namespace-modal>header{padding:12px 14px;gap:10px}
+ .namespace-modal h2{font-size:16px}
+ .namespace-modal>header p{font-size:10px;margin-top:2px}
+ .namespace-modal .modal-body{padding:12px 14px}
+ .namespace-modal>footer{padding:10px 14px;align-items:center}
+ .namespace-modal .footer-actions .button{font-size:11px;padding:8px 13px;min-height:35px}
+ .namespace-kind-tabs{margin-bottom:9px}
+ .namespace-service-title strong{font-size:11px}
+ .namespace-resource-list>li{padding:9px 10px}
+ .namespace-policy-tags .policy-tag{font-size:8px}
+}

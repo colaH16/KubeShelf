@@ -348,6 +348,8 @@ func demoSettings(c Config) Settings {
 	s.Namespaces["public-services"] = Policy{Mode: "public"}
 	s.Namespaces["infra"] = Policy{Mode: "admin"}
 	s.Namespaces["myapps"] = Policy{Mode: "restricted", Groups: []string{"family"}}
+	s.NodePortNamespaces["public-services"] = Policy{Mode: "admin"}
+	s.NodePortNamespaces["infra"] = Policy{Mode: "admin"}
 	s.Manual = []ManualApp{{ID: "manual-proxmox", Name: "Proxmox", URLs: []ManualURL{{ID: "manual-proxmox-main", Label: "Management", URL: "https://proxmox.example.com"}}}, {ID: "manual-ldap", Name: "Directory Admin", URLs: []ManualURL{{ID: "manual-ldap-main", Label: "LDAP", URL: "https://directory.example.com"}}}}
 	s.Apps["manual-proxmox"] = AppSettings{Icon: "server"}
 	s.Apps["manual-ldap"] = AppSettings{Icon: "users"}

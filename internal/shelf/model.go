@@ -159,17 +159,18 @@ type Target struct {
 	TCPEnabled bool    `json:"tcpEnabled"`
 }
 type Settings struct {
-	SchemaVersion int                    `json:"schemaVersion"`
-	Revision      string                 `json:"revision"`
-	Namespaces    map[string]Policy      `json:"namespaces"`
-	Apps          map[string]AppSettings `json:"apps"`
-	Manual        []ManualApp            `json:"manual"`
-	Targets       []Target               `json:"targets"`
-	Assignments   map[string]string      `json:"assignments"`
+	SchemaVersion      int                    `json:"schemaVersion"`
+	Revision           string                 `json:"revision"`
+	Namespaces         map[string]Policy      `json:"namespaces"`
+	NodePortNamespaces map[string]Policy      `json:"nodePortNamespaces"`
+	Apps               map[string]AppSettings `json:"apps"`
+	Manual             []ManualApp            `json:"manual"`
+	Targets            []Target               `json:"targets"`
+	Assignments        map[string]string      `json:"assignments"`
 }
 
 func EmptySettings() Settings {
-	return Settings{SchemaVersion: 1, Revision: "initial", Namespaces: map[string]Policy{}, Apps: map[string]AppSettings{}, Manual: []ManualApp{}, Targets: []Target{}, Assignments: map[string]string{}}
+	return Settings{SchemaVersion: 1, Revision: "initial", Namespaces: map[string]Policy{}, NodePortNamespaces: map[string]Policy{}, Apps: map[string]AppSettings{}, Manual: []ManualApp{}, Targets: []Target{}, Assignments: map[string]string{}}
 }
 func cloneSettings(s Settings) Settings {
 	b, _ := json.Marshal(s)
@@ -201,6 +202,9 @@ func ValidateSettings(s *Settings) error {
 	if s.Namespaces == nil {
 		s.Namespaces = map[string]Policy{}
 	}
+	if s.NodePortNamespaces == nil {
+		s.NodePortNamespaces = map[string]Policy{}
+	}
 	if s.Apps == nil {
 		s.Apps = map[string]AppSettings{}
 	}
@@ -219,6 +223,14 @@ func ValidateSettings(s *Settings) error {
 	for ns, p := range s.Namespaces {
 		if ns == "" || len(ns) > 253 {
 			return fmt.Errorf("invalid namespace")
+		}
+		if err := validatePolicy(&p); err != nil {
+			return err
+		}
+	}
+	for ns, p := range s.NodePortNamespaces {
+		if ns == "" || len(ns) > 253 {
+			return fmt.Errorf("invalid NodePort namespace")
 		}
 		if err := validatePolicy(&p); err != nil {
 			return err
@@ -379,10 +391,15 @@ type Card struct {
 	Endpoints   []Endpoint `json:"endpoints"`
 }
 type NamespaceInfo struct {
-	Name       string `json:"name"`
-	Configured bool   `json:"configured"`
-	Services   int    `json:"services"`
-	Policy     Policy `json:"policy"`
+	Name               string `json:"name"`
+	Configured         bool   `json:"configured"`
+	Services           int    `json:"services"`
+	Policy             Policy `json:"policy"`
+	IngressConfigured  bool   `json:"ingressConfigured"`
+	IngressServices    int    `json:"ingressServices"`
+	NodePortConfigured bool   `json:"nodePortConfigured"`
+	NodePortServices   int    `json:"nodePortServices"`
+	NodePortPolicy     Policy `json:"nodePortPolicy"`
 }
 type Catalog struct {
 	Cards           []Card          `json:"cards"`
