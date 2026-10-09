@@ -4,7 +4,7 @@ import type { AdminState, AppSettings, Card, Endpoint, Settings } from './types'
 import { AppIcon, iconNames, Modal, PolicyEditor } from './ui';
 export type EditRequest = { kind: 'card'; card: Card } | { kind: 'namespace'; namespace: string } | { kind: 'targets' } | { kind: 'manual'; id?: string };
 function comparable(s: Settings) { const v = { ...s, revision: '' }; return JSON.stringify(v); }
-export default function Editor({ request, data, saving, onSave, onClose }: { request: EditRequest; data: AdminState; saving: boolean; onSave: (s: Settings, base: string) => Promise<{ baseCommit: string; revision: string }>; onClose: () => void }) {
+export default function Editor({ request, data, saving, onSave, onClose }: { request: EditRequest; data: AdminState; saving: boolean; onSave: (s: Settings, base: string, reviewEndpoints?: string[]) => Promise<{ baseCommit: string; revision: string; settings: Settings }>; onClose: () => void }) {
   const [newManualID] = useState(() => request.kind === 'manual' ? request.id || 'manual-' + crypto.randomUUID() : undefined);
   const [draft, setDraft] = useState<Settings>(() => {
     const s = structuredClone(data.settings);
@@ -18,12 +18,12 @@ export default function Editor({ request, data, saving, onSave, onClose }: { req
   const change = (f: (s: Settings) => void) => setDraft(old => { const next = structuredClone(old); f(next); return next; });
   const app = (s: Settings, id: string): AppSettings => s.apps[id] ||= { hidden: false };
   const eSettings = (s: Settings, e: Endpoint) => { const a = app(s, e.appId); a.endpoints ||= {}; return a.endpoints[e.id] ||= {}; };
-  const persist = async (value = draft) => { setError(''); try { const result = await onSave(value, base); setBase(result.baseCommit); setSaved(comparable(value)); setDraft(current => ({ ...current, revision: result.revision })); } catch (e) { setError((e as Error).message); } };
+  const persist = async (value = draft, reviewEndpoints: string[] = []) => { setError(''); try { const result = await onSave(value, base, reviewEndpoints); setBase(result.baseCommit); setSaved(comparable(result.settings)); setDraft(current => { if (comparable(current) === comparable(value)) return structuredClone(result.settings); const next = structuredClone(current); next.revision = result.revision; for (const [id, a] of Object.entries(result.settings.apps)) { if (a.reviewed) app(next, id).reviewed = a.reviewed; } return next; }); } catch (e) { setError((e as Error).message); } };
   const close = () => { if (!dirty || window.confirm('저장하지 않은 변경사항을 닫을까요?')) onClose(); };
   const card = request.kind === 'card' ? data.catalog.cards.find(c => c.id === request.card.id && c.source === request.card.source) || request.card : undefined;
   const manualID = request.kind === 'manual' ? newManualID : card?.source === 'custom' ? card.endpoints[0]?.appId : undefined;
   const manual = draft.manual.find(m => m.id === manualID);
-  const review = () => { if (!card) return; const next = structuredClone(draft); for (const e of card.endpoints) { if (e.fingerprint) { const a = app(next, e.appId); a.reviewed ||= {}; a.reviewed[e.id] = e.fingerprint; } } setDraft(next); void persist(next); };
+  const review = () => { if (!card) return; const next = structuredClone(draft); for (const e of card.endpoints) { if (e.fingerprint) { const a = app(next, e.appId); a.reviewed ||= {}; a.reviewed[e.id] = e.fingerprint; } } setDraft(next); void persist(next, card.endpoints.map(e => e.id)); };
   const title = request.kind === 'targets' ? 'NodePort 도메인' : request.kind === 'namespace' ? '네임스페이스 공개 범위' : request.kind === 'manual' ? '서비스 직접 추가' : '서비스 설정';
   const subtitle = request.kind === 'namespace' ? request.namespace : card?.name;
   const editID = card?.id || manualID;

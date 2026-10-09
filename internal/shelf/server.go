@@ -65,8 +65,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/admin/status", s.admin(func(w http.ResponseWriter, r *http.Request, u Identity) { writeJSON(w, 200, s.store.Status()) }))
 	mux.HandleFunc("PUT /api/admin/state", s.admin(func(w http.ResponseWriter, r *http.Request, u Identity) {
 		var req struct {
-			BaseCommit string   `json:"baseCommit"`
-			Settings   Settings `json:"settings"`
+			BaseCommit      string   `json:"baseCommit"`
+			ReviewEndpoints []string `json:"reviewEndpoints"`
+			Settings        Settings `json:"settings"`
 		}
 		if err := decodeBody(w, r, &req); err != nil {
 			writeError(w, 400, err)
@@ -74,6 +75,29 @@ func (s *Server) Handler() http.Handler {
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
 		defer cancel()
+		if err := ValidateSettings(&req.Settings); err != nil {
+			writeError(w, 400, err)
+			return
+		}
+		if len(req.ReviewEndpoints) > 1000 {
+			writeError(w, 400, errors.New("too many review entries"))
+			return
+		}
+		if len(req.ReviewEndpoints) > 0 {
+			catalog := BuildCatalog(s.source.Snapshot(), req.Settings, s.cfg, u)
+			for _, card := range catalog.Cards {
+				for _, e := range card.Endpoints {
+					if contains(req.ReviewEndpoints, e.ID) && e.Kind != "custom" {
+						a := req.Settings.Apps[e.AppID]
+						if a.Reviewed == nil {
+							a.Reviewed = map[string]string{}
+						}
+						a.Reviewed[e.ID] = e.Fingerprint
+						req.Settings.Apps[e.AppID] = a
+					}
+				}
+			}
+		}
 		status, err := s.store.Save(ctx, req.BaseCommit, req.Settings, u.Username)
 		if err != nil {
 			code := 400
@@ -83,8 +107,8 @@ func (s *Server) Handler() http.Handler {
 			writeError(w, code, err)
 			return
 		}
-		_, commit := s.store.Desired()
-		writeJSON(w, 200, map[string]any{"status": status, "baseCommit": commit})
+		saved, commit := s.store.Desired()
+		writeJSON(w, 200, map[string]any{"status": status, "baseCommit": commit, "settings": saved})
 	}))
 	mux.HandleFunc("POST /api/admin/tcp", s.admin(s.checkTCP))
 	if s.cfg.Demo {

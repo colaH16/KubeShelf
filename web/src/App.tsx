@@ -41,7 +41,7 @@ export default function App() {
       const identity = cat.identity.subject || 'anonymous';
       if (who.current !== identity) { who.current = identity; setPrefs(safePrefs('kubeshelf:' + identity)); setAdmin(undefined); setEditor(undefined); setStatus(undefined); setView('all'); setQuery(''); }
       setCatalog(cat); setError('');
-      if (cat.identity.admin) { const next = await api<ApplyStatus>('/api/admin/status'); if (mounted.current && request === requestNumber.current && who.current === identity) setStatus(next); }
+      if (cat.identity.admin && !saveLock.current) { const next = await api<ApplyStatus>('/api/admin/status'); if (mounted.current && request === requestNumber.current && who.current === identity) setStatus(next); }
     } catch (e) { if (mounted.current && request === requestNumber.current && !loggingOut.current) setError((e as Error).message); }
   }, []);
   useEffect(() => { mounted.current = true; void refresh(); const timer = setInterval(() => void refresh(), 5000); return () => { mounted.current = false; clearInterval(timer); }; }, [refresh]);
@@ -57,14 +57,14 @@ export default function App() {
     });
   }, [catalog, prefs.target]);
   const notice = (message: string) => setToast(message);
-  const openEditor = async (request: EditRequest) => { setOpening(true); try { const data = await api<AdminState>('/api/admin/state'); setAdmin(data); setEditor(request); } catch (e) { notice((e as Error).message); } finally { setOpening(false); } };
-  const save = async (settings: Settings, baseCommit: string) => {
+  const openEditor = async (request: EditRequest) => { const identity = who.current; setOpening(true); try { const data = await api<AdminState>('/api/admin/state'); if (loggingOut.current || who.current !== identity) return; setAdmin(data); setEditor(request); } catch (e) { notice((e as Error).message); } finally { setOpening(false); } };
+  const save = async (settings: Settings, baseCommit: string, reviewEndpoints: string[] = []) => {
     if (saveLock.current) throw new Error('다른 저장이 끝날 때까지 기다려 주세요');
-    saveLock.current = true; setSaving(true);
+    saveLock.current = true; ++requestNumber.current; setSaving(true);
     try {
-      const result = await api<{ status: ApplyStatus; baseCommit: string }>('/api/admin/state', { method: 'PUT', headers: { 'X-CSRF-Token': catalog?.csrf || '' }, body: JSON.stringify({ settings, baseCommit }) });
-      setStatus(result.status); setAdmin(old => old ? { ...old, settings: { ...settings, revision: result.status.desiredRevision }, baseCommit: result.baseCommit, status: result.status } : old); notice('Git에 저장했어요. 설정 적용을 기다리고 있습니다.');
-      return { baseCommit: result.baseCommit, revision: result.status.desiredRevision };
+      const result = await api<{ status: ApplyStatus; baseCommit: string; settings: Settings }>('/api/admin/state', { method: 'PUT', headers: { 'X-CSRF-Token': catalog?.csrf || '' }, body: JSON.stringify({ settings, baseCommit, reviewEndpoints }) });
+      setStatus(result.status); setAdmin(old => old ? { ...old, settings: result.settings, baseCommit: result.baseCommit, status: result.status } : old); notice('Git에 저장했어요. 설정 적용을 기다리고 있습니다.');
+      return { baseCommit: result.baseCommit, revision: result.status.desiredRevision, settings: result.settings };
     } finally { saveLock.current = false; setSaving(false); }
   };
   const restore = async (card: Card) => { try { const data = await api<AdminState>('/api/admin/state'); const next = structuredClone(data.settings); for (const id of new Set([card.id, ...card.endpoints.map(e => e.appId)])) if (next.apps[id]) next.apps[id].hidden = false; await save(next, data.baseCommit); } catch (e) { notice((e as Error).message); } };
