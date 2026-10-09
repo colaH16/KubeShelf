@@ -12,7 +12,7 @@ helm:
   releaseName: kubeshelf
   repo: https://colah16.github.io/KubeShelf
   chart: kubeshelf
-  version: 0.1.10
+  version: 0.1.11
   valuesFiles:
     - values.yaml
 ```
@@ -78,7 +78,7 @@ Personal stars, collections and address selectors create a draft. The bottom sav
 
 Fleet includes the `users/` YAML files in the existing `runtime` bundle; do not add a nested `fleet.yaml`. Extend the trusted deployment repository's ConfigMap admission allowlist to `^kubeshelf-user-[0-9a-f]{40}$` as well as the shared ConfigMap name. RBAC cannot express name prefixes for update/patch/delete, so combine namespace-scoped permissions with a fail-closed admission policy. Continue restricting Helm metadata Secrets to the dedicated release. The app gets namespace-scoped ConfigMap get/list/watch only and no Secret API permissions. User ConfigMap events refresh its Git snapshot; this is separate from Fleet polling and requires no dynamically mounted per-user volumes.
 
-Upgrading from shared address defaults moves legacy `defaultTarget` and `apps[cardID].defaultEndpoint` into the first configured administrator's account, preserving existing personal choices and removing the old shared fields atomically. Registered NodePort domains and access policies stay shared. Version 0.1.10 temporarily imports an administrator's browser favorites into the first collection on login; remove this temporary client migration after the existing browser's transfer is verified in Git and Kubernetes. Anonymous browser favorites remain local.
+Upgrading from shared address defaults moves legacy `defaultTarget` and `apps[cardID].defaultEndpoint` into the first configured administrator's account, preserving existing personal choices and removing the old shared fields atomically. Registered NodePort domains and access policies stay shared. The temporary browser-favorites migration shipped in 0.1.10 was removed in 0.1.11 after its transfer was verified in Git and Kubernetes. Anonymous browser favorites remain local.
 
 The view routes `/`, `/favorites`, `/discovery`, `/namespaces`, and `/hidden` serve the SPA directly. Collections use `/favorites?collection=<id>`. Unknown paths and missing assets remain 404. Login accepts only these local routes and the validated collection query as return destinations. Management pages and APIs retain their administrator checks.
 

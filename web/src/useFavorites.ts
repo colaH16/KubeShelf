@@ -41,9 +41,9 @@ export function useFavorites(subject: string, csrf: string, blocked: boolean) {
   setDraft(JSON.stringify(profile) === original ? undefined : { owner: subject, profile: structuredClone(profile), version, original });
   setError('');
  };
- const persist = async (migration?: FavoriteState) => {
-  const value = migration || draft;
-  if (!subject || !value || (!migration && !dirty) || lock.current || blocked) return;
+ const persist = async () => {
+  const value = draft;
+  if (!subject || !value || !dirty || lock.current || blocked) return;
   lock.current = true; ++sequence.current; setSaving(true); setError('');
   try {
    const data = await api<FavoriteState>('/api/me/favorites', { method: 'PUT', headers: { 'X-CSRF-Token': csrf }, body: JSON.stringify({ profile: value.profile, version: value.version }) });
@@ -53,7 +53,6 @@ export function useFavorites(subject: string, csrf: string, blocked: boolean) {
    const message = (e as Error).message;
    if (owner.current === subject) {
     setError(message);
-    if (migration && state) setDraft({ owner: subject, profile: migration.profile, version: migration.version, original: JSON.stringify(state.profile) });
    }
    return { ok: false, error: message };
   }
