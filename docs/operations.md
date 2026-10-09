@@ -79,4 +79,4 @@ Kubernetes API permissions are read-only for Nodes, Namespaces, Services, Pods, 
 
 ## Releasing
 
-Update chart `version`, `appVersion`, default image tag and application package version, commit, then push a matching `vX.Y.Z` tag. CI tests the frontend and backend and renders the chart. The release workflow builds both image architectures, publishes the image, then preserves older chart archives while updating the index. Pin a chart version and optionally an image digest in private values. Do not overwrite an existing released version.
+Update chart `version`, `appVersion`, default image tag and application package version, commit, then push a matching `vX.Y.Z` tag. CI tests the frontend and backend and renders the chart. The release workflow builds both image architectures, publishes the image, then preserves older chart archives while updating the index. The tag workflow archives the chart on `gh-pages`, then dispatches `pages.yml` on `main` to respect GitHub Pages environment protection. Pin a chart version and optionally an image digest in private values. Do not overwrite an existing released version.
