@@ -2,8 +2,28 @@ apiVersion: v1
 entries:
   kubeshelf:
   - apiVersion: v2
+    appVersion: 0.1.9
+    created: "2026-10-09T10:31:04.719714226Z"
+    description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
+      settings.
+    digest: bcf862eef3e34697f6bda8abd0146d95992adc7e473336bbc6cde782cc4d2248
+    home: https://github.com/colaH16/KubeShelf
+    keywords:
+    - kubernetes
+    - dashboard
+    - ingress
+    - nodeport
+    - gitops
+    name: kubeshelf
+    sources:
+    - https://github.com/colaH16/KubeShelf
+    type: application
+    urls:
+    - https://colah16.github.io/KubeShelf/kubeshelf-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v2
     appVersion: 0.1.8
-    created: "2026-10-09T09:41:26.143394812Z"
+    created: "2026-10-09T10:31:04.719398656Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 4b022771d2f933eb583bcf1005251e4c3edabba87fd6edcf877058029ef9216f
@@ -23,7 +43,7 @@ entries:
     version: 0.1.8
   - apiVersion: v2
     appVersion: 0.1.7
-    created: "2026-10-09T09:41:26.14264376Z"
+    created: "2026-10-09T10:31:04.719099076Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 572b0bb0ae0aadb5ff3f3d39b47fe38383fa5d602464137917711950302ca60a
@@ -43,7 +63,7 @@ entries:
     version: 0.1.7
   - apiVersion: v2
     appVersion: 0.1.6
-    created: "2026-10-09T09:41:26.14194319Z"
+    created: "2026-10-09T10:31:04.718735606Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 5ce187efa0ef6c7de68490fc46e4a8da2dfe5d1375da0a5befc9da102ee619cf
@@ -63,7 +83,7 @@ entries:
     version: 0.1.6
   - apiVersion: v2
     appVersion: 0.1.5
-    created: "2026-10-09T09:41:26.14162252Z"
+    created: "2026-10-09T10:31:04.718403986Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 8b206114f0362675fd883655232310fd4912c0f1972c41a707433c9cb9064ee2
@@ -83,7 +103,7 @@ entries:
     version: 0.1.5
   - apiVersion: v2
     appVersion: 0.1.4
-    created: "2026-10-09T09:41:26.141271864Z"
+    created: "2026-10-09T10:31:04.71807982Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 98c4cca78ebd01706599a2fb54076db8fb5ef9641cacaa23b0d8edc66be7d4b6
@@ -103,7 +123,7 @@ entries:
     version: 0.1.4
   - apiVersion: v2
     appVersion: 0.1.3
-    created: "2026-10-09T09:41:26.140953018Z"
+    created: "2026-10-09T10:31:04.717725047Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 81ca7044d86f162352ed3342810e5ff0598511c775552ffe35b4deb9cf2f5cee
@@ -123,7 +143,7 @@ entries:
     version: 0.1.3
   - apiVersion: v2
     appVersion: 0.1.2
-    created: "2026-10-09T09:41:26.140601721Z"
+    created: "2026-10-09T10:31:04.717392315Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 9f5b8005623e70ffd2808964b2098774085b5d5418643f4105ff7243ac7635a3
@@ -143,7 +163,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-10-09T09:41:26.140239394Z"
+    created: "2026-10-09T10:31:04.717038083Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 8076f17e106a5342ff2f5c099fc88f1580002b7d15dd041336b8d48b62e02b10
@@ -163,7 +183,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-10-09T09:41:26.139902303Z"
+    created: "2026-10-09T10:31:04.716641432Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 7fdefac3d1ef99bf00d46ef7a0f173218d1ba5716c8634d3cbdc5595d8384b63
@@ -181,4 +201,4 @@ entries:
     urls:
     - https://colah16.github.io/KubeShelf/kubeshelf-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-09T09:41:26.139437434Z"
+generated: "2026-10-09T10:31:04.716168979Z"
