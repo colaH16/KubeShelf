@@ -41,3 +41,16 @@ func TestViewRoutesAndAdminAPIAreSeparate(t *testing.T) {
 		}
 	}
 }
+
+func TestCollectionReturnDestinations(t *testing.T) {
+	for _, path := range []string{"/favorites?collection=daily", "/favorites?collection=ops_1-2"} {
+		if got := safeReturnTo(path); got != path {
+			t.Errorf("lost collection %q: %q", path, got)
+		}
+	}
+	for _, path := range []string{"//evil.example/favorites?collection=daily", "/favorites?collection=a&collection=b", "/favorites?collection=a&next=evil", "/favorites?collection=../api", "/hidden?collection=a", "/favorites?collection=", "/favorites?collection=a#evil"} {
+		if got := safeReturnTo(path); got != "/" {
+			t.Errorf("unsafe return %q: %q", path, got)
+		}
+	}
+}

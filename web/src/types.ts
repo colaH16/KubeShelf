@@ -14,3 +14,7 @@ export type Catalog = { defaultTarget?: string; cards: Card[]; targets: Target[]
 export type ApplyStatus = { desiredRevision: string; appliedRevision: string; commit: string; pending: boolean; error?: string; appliedAt: string };
 export type Directory = { users: { subject: string; username: string; name: string; groups: string[] }[]; groups: string[] };
 export type AdminState = { settings: Settings; baseCommit: string; status: ApplyStatus; catalog: Catalog; directory: Directory };
+
+export type FavoriteCollection = { id: string; name: string; cards: string[] };
+export type FavoriteProfile = { defaultTarget?: string; defaultEndpoints: Record<string, string>; collections: FavoriteCollection[]; startCollection: string };
+export type FavoriteState = { profile: FavoriteProfile; version: string };

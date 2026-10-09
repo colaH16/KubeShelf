@@ -47,6 +47,8 @@ func (s *Server) Handler() http.Handler {
 		cat.Version = s.version
 		writeJSON(w, 200, cat)
 	})
+	mux.HandleFunc("GET /api/me/favorites", s.account(s.getFavorites))
+	mux.HandleFunc("PUT /api/me/favorites", s.account(s.putFavorites))
 	mux.HandleFunc("GET /api/admin/state", s.admin(func(w http.ResponseWriter, r *http.Request, u Identity) {
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
@@ -77,6 +79,11 @@ func (s *Server) Handler() http.Handler {
 		defer cancel()
 		if err := ValidateSettings(&req.Settings); err != nil {
 			writeError(w, 400, err)
+			return
+		}
+		current, _ := s.store.Desired()
+		if !sameLegacyDefaults(current, req.Settings) {
+			writeError(w, 400, errors.New("기본 접속 주소는 개인 설정에서 저장합니다. 페이지를 새로고침해 주세요"))
 			return
 		}
 		if len(req.ReviewEndpoints) > 1000 {
@@ -260,4 +267,21 @@ func (s *Server) checkTCP(w http.ResponseWriter, r *http.Request, u Identity) {
 		message = "서버에서 TCP 연결 성공"
 	}
 	writeJSON(w, 200, map[string]any{"reachable": reachable, "message": message, "checkedAt": time.Now()})
+}
+
+func sameLegacyDefaults(a, b Settings) bool {
+	if a.DefaultTarget != b.DefaultTarget {
+		return false
+	}
+	for id, x := range a.Apps {
+		if x.DefaultEndpoint != b.Apps[id].DefaultEndpoint {
+			return false
+		}
+	}
+	for id, x := range b.Apps {
+		if x.DefaultEndpoint != a.Apps[id].DefaultEndpoint {
+			return false
+		}
+	}
+	return true
 }

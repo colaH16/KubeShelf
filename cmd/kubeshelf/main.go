@@ -42,7 +42,11 @@ func main() {
 		}
 	}
 	go store.Run(ctx)
+	if cluster, ok := source.(*shelf.KubernetesSource); ok {
+		go cluster.RunUserSettings(ctx, store.Refresh)
+	}
 	app := shelf.NewServer(cfg, store, source, version, webassets.Files())
+	go app.RunAccounts(ctx)
 	srv := &http.Server{Addr: cfg.Listen, Handler: app.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 60 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 16}
 	go func() {
 		<-ctx.Done()

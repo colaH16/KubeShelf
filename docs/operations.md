@@ -12,7 +12,7 @@ helm:
   releaseName: kubeshelf
   repo: https://colah16.github.io/KubeShelf
   chart: kubeshelf
-  version: 0.1.9
+  version: 0.1.10
   valuesFiles:
     - values.yaml
 ```
@@ -40,7 +40,7 @@ If a proxy/CDN forces caching despite origin headers, configure a bypass for the
 
 ## Runtime settings repository
 
-The application writes exactly the configured manifest path (default `runtime/settings.yaml`):
+The application writes shared settings to the configured manifest path (default `runtime/settings.yaml`):
 
 ```yaml
 apiVersion: v1
@@ -66,15 +66,21 @@ Manage its Fleet `GitRepo` and narrow deployer permissions from a separate, trus
 
 Configure Fleet with `pollingInterval: 15s`. Runtime `fleet.yaml` can use a fixed Helm release name `kubeshelf-runtime`. The settings file contains a revision token, so a newer save can supersede an intermediate pending revision. Stale editor commits and concurrent Git changes return a conflict rather than force-pushing. A push failure leaves the applied configuration untouched. Invalid mounted settings retain the previous valid configuration and display an error to administrators.
 
-Git working data lives in `emptyDir`. Only one replica is supported, using `Recreate`. Source branches and Git history are authoritative; back up the Git server. The app commits only the runtime ConfigMap; deployment secrets must never be added through the editor.
+Git working data lives in `emptyDir`. Only one replica is supported, using `Recreate`. Source branches and Git history are authoritative; back up the Git server. The app commits the shared ConfigMap and account ConfigMaps under `runtime/users/`; deployment secrets must never be added through the editor.
 
-## Saved address defaults and navigation
+## Account settings, favorites and default addresses
 
-Optional `defaultTarget` at the settings root stores a NodePort target ID (a discovered node or registered domain). Optional `apps[cardID].defaultEndpoint` stores the default discovered/manual address ID for that presentation card. Older settings work without either field. Unknown, deleted, hidden or unauthorized references cannot expose new targets or addresses; the UI falls back to an available choice.
+Each active directory user gets a separate manifest at `runtime/users/kubeshelf-user-<hash>.yaml`, where `<hash>` is the first 40 hexadecimal characters of SHA-256 of the stable OIDC subject. The ConfigMap has the same name, label `kubeshelf.io/user-settings: "true"`, subject annotation `kubeshelf.io/subject`, and one `favorites.json` data entry. It stores collections, membership, starting collection, `defaultTarget`, and a `defaultEndpoints` map keyed by card ID. The authenticated session determines the file; clients cannot select another subject.
 
-Administrators stage dashboard selector changes and save them together from the bottom bar. Saving fetches the latest desired settings, merges only the changed defaults, then uses the usual base-commit conflict check and immediate Git push. It also acknowledges the displayed addresses of cards whose default address was changed. The selectors are locked from the initial fetch through push completion. Failed saves preserve the staged choices; successful pushes remove the bar and retain the chosen defaults while Fleet is pending. Applied permissions still come exclusively from the mounted configuration. A new browser uses applied defaults; non-admin visitors can override them locally without writing to Git.
+On startup, the authentik directory is loaded and missing account files are initialized in one commit. Later directory additions are checked every minute. Existing profiles are preserved, including disabled accounts. Administrators start with three editable collections; ordinary users have one favorites list. Card IDs retained after access is revoked never grant catalog access. New address preferences must be visible to the saving user; missing or restricted saved references fall back to an available address.
 
-The view routes `/`, `/favorites`, `/discovery`, `/namespaces`, and `/hidden` serve the SPA directly. Unknown paths and missing assets remain 404. Login accepts only these local routes as return destinations. Management pages and APIs retain their administrator checks.
+Personal stars, collections and address selectors create a draft. The bottom save bar pushes all personal changes together and locks personal controls until completion. Failed pushes keep the draft. Different accounts edit different files. Shared settings and each account have separate content-version checks; another account's commit does not invalidate an unchanged file. Two devices editing the same account return a conflict instead of silently overwriting. Writes are serialized with a fresh fetch and never force-push. Reads use the last confirmed remote commit, so a rejected local commit cannot appear as saved.
+
+Fleet includes the `users/` YAML files in the existing `runtime` bundle; do not add a nested `fleet.yaml`. Extend the trusted deployment repository's ConfigMap admission allowlist to `^kubeshelf-user-[0-9a-f]{40}$` as well as the shared ConfigMap name. RBAC cannot express name prefixes for update/patch/delete, so combine namespace-scoped permissions with a fail-closed admission policy. Continue restricting Helm metadata Secrets to the dedicated release. The app gets namespace-scoped ConfigMap get/list/watch only and no Secret API permissions. User ConfigMap events refresh its Git snapshot; this is separate from Fleet polling and requires no dynamically mounted per-user volumes.
+
+Upgrading from shared address defaults moves legacy `defaultTarget` and `apps[cardID].defaultEndpoint` into the first configured administrator's account, preserving existing personal choices and removing the old shared fields atomically. Registered NodePort domains and access policies stay shared. Version 0.1.10 temporarily imports an administrator's browser favorites into the first collection on login; remove this temporary client migration after the existing browser's transfer is verified in Git and Kubernetes. Anonymous browser favorites remain local.
+
+The view routes `/`, `/favorites`, `/discovery`, `/namespaces`, and `/hidden` serve the SPA directly. Collections use `/favorites?collection=<id>`. Unknown paths and missing assets remain 404. Login accepts only these local routes and the validated collection query as return destinations. Management pages and APIs retain their administrator checks.
 
 ## Discovery and visibility
 

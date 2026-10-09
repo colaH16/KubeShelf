@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -12,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -52,6 +54,7 @@ type ApplyStatus struct {
 	AppliedAt       time.Time `json:"appliedAt"`
 }
 type Store struct {
+	profiles         map[string]FavoriteProfile // Demo only; protected by saveMu.
 	mu               sync.RWMutex
 	saveMu           sync.Mutex
 	cfg              Config
@@ -108,7 +111,14 @@ func (s *Store) Applied() Settings {
 func (s *Store) Desired() (Settings, string) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return cloneSettings(s.desired), s.commit
+	return cloneSettings(s.desired), settingsVersion(s.desired)
+}
+
+// Scope conflict detection to the shared settings file, not unrelated user commits.
+func settingsVersion(s Settings) string {
+	data, _ := json.Marshal(s)
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 func (s *Store) Status() ApplyStatus {
 	s.mu.RLock()
@@ -202,7 +212,7 @@ func (s *Store) Save(ctx context.Context, base string, next Settings, actor stri
 		s.commit = commit
 		s.mu.Unlock()
 	}
-	if base != commit {
+	if base != settingsVersion(old) {
 		return s.Status(), ErrConflict
 	}
 	next.Revision = randomID()
@@ -312,21 +322,36 @@ func (g *gitRepository) read(ctx context.Context) (Settings, string, error) {
 	s, err := decodeSettings([]byte(cm.Data["settings.json"]))
 	return s, strings.TrimSpace(string(head)), err
 }
-func (g *gitRepository) write(ctx context.Context, s Settings, msg string) (string, error) {
+func encodeSettings(s Settings) ([]byte, error) {
 	data, _ := json.MarshalIndent(s, "", "  ")
 	cm := core.ConfigMap{TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "ConfigMap"}, ObjectMeta: metav1.ObjectMeta{Name: env("KUBESHELF_CONFIGMAP_NAME", "kubeshelf-settings"), Namespace: env("POD_NAMESPACE", "public-services")}, Data: map[string]string{"settings.json": string(data) + "\n"}}
-	encoded, err := yaml.Marshal(cm)
+	return yaml.Marshal(cm)
+}
+func (g *gitRepository) write(ctx context.Context, s Settings, msg string) (string, error) {
+	encoded, err := encodeSettings(s)
 	if err != nil {
 		return "", err
 	}
-	// Use the Git index directly: no repository-controlled symlinks, filters or hooks execute.
-	blob, err := g.run(ctx, encoded, "hash-object", "-w", "--stdin")
-	if err != nil {
-		return "", err
+	return g.writeFiles(ctx, map[string][]byte{g.cfg.GitPath: encoded}, msg)
+}
+func (g *gitRepository) writeFiles(ctx context.Context, files map[string][]byte, msg string) (string, error) {
+	// The callers supply either the configured settings path or a server-derived
+	// user ConfigMap path. No path from an HTTP request reaches the Git index.
+	paths := make([]string, 0, len(files))
+	for path := range files {
+		paths = append(paths, path)
 	}
-	if _, err = g.run(ctx, nil, "update-index", "--add", "--cacheinfo", "100644,"+strings.TrimSpace(string(blob))+","+g.cfg.GitPath); err != nil {
-		return "", err
+	sort.Strings(paths)
+	for _, path := range paths {
+		blob, err := g.run(ctx, files[path], "hash-object", "-w", "--stdin")
+		if err != nil {
+			return "", err
+		}
+		if _, err = g.run(ctx, nil, "update-index", "--add", "--cacheinfo", "100644,"+strings.TrimSpace(string(blob))+","+path); err != nil {
+			return "", err
+		}
 	}
+	var err error
 	if _, err = g.run(ctx, []byte(msg), "commit", "--file=-"); err != nil {
 		return "", err
 	}

@@ -18,9 +18,9 @@ A dashboard that discovers Kubernetes Ingress and NodePort services, alongside y
 
 Namespace visibility dialogs list discovered Ingress names, addresses, backing Services and NodePorts, including hidden services and indicators for visibility overrides. Ingress and NodePort tabs have independent visibility controls. Compact resource lists and help text scroll while visibility controls and Save stay in view. Service and address editors show the inherited visibility, its source, and selected groups/users next to the selector. Grouped addresses keep their original policy sources; the preview follows unsaved edits.
 
-Administrators can change the NodePort selector and service address selectors, then save all changed defaults with the bottom **Save as defaults** bar. No push occurs until Save is clicked. Selectors lock while saving; a failed save retains the choices. The bar disappears as soon as the push succeeds, while the apply status remains until Fleet delivers the mounted configuration. Saved defaults initialize new browsers and never grant access to a restricted address. Visitors can still choose a different address locally.
+Authenticated users save favorites and default addresses in their own ConfigMap manifests in private Git. Administrators start with three editable collections (Daily, Management, Monitoring); other users have one favorites list. A service may belong to several administrator collections. Choose an optional starting collection. Stars, collection edits and default-address choices are staged until the bottom **Save favorites / default addresses** button is clicked. Personal controls lock during the immediate push; failures retain the draft. Each account only receives addresses allowed by the applied access policies.
 
-Workspace views have direct URLs: `/`, `/favorites`, `/discovery`, `/namespaces`, and `/hidden`. Refresh, history navigation, and returning to a view after login are supported; management views require administrator access.
+Workspace views have direct URLs: `/`, `/favorites`, `/discovery`, `/namespaces`, and `/hidden`. Collections have URLs such as `/favorites?collection=daily`. Refresh, history navigation, and returning to a view after login are supported; management views require administrator access.
 
 ## Local demo
 
@@ -42,7 +42,7 @@ Visit `http://localhost:8080`. The login button opens a demo administrator sessi
 helm repo add kubeshelf https://colah16.github.io/KubeShelf
 helm repo update
 helm upgrade --install kubeshelf kubeshelf/kubeshelf \
-  --version 0.1.9 --namespace public-services --values private-values.yaml
+  --version 0.1.10 --namespace public-services --values private-values.yaml
 ```
 
 See [example values](examples/values.yaml), [chart defaults](charts/kubeshelf/values.yaml) and the [operations guide](docs/operations.md). Production requires an existing runtime ConfigMap, SSH credentials and pinned host keys, OIDC client credentials, and an authentik directory token. These belong in your private GitOps repository.
@@ -58,7 +58,7 @@ Editor → validate → Git commit and immediate push → Fleet reconciliation
 
 Saving waits for the push and prevents overlapping saves. In service editors, editing enables Save and disables review. Save persists the edits and acknowledges the displayed addresses together, clearing their NEW/CHANGED markers. With no unsaved changes, review acknowledges the addresses without changing their settings. Both actions are disabled while a request is in flight; failed requests preserve the edits and leave review markers unchanged. Editing can continue while Fleet applies a saved revision. The live catalog and permissions change only after the mounted ConfigMap changes. There is no timed batch of Git pushes or periodic application Git polling. Fleet's polling interval is only one part of propagation time; kubelet projection adds delay.
 
-The application runs as one replica with ephemeral Git working storage. Configuration is durable in Git; it needs no database or persistent volume. Favorites and visitor address choices are local browser preferences for each identity. Administrator-selected shared defaults are stored in the runtime ConfigMap in Git, independently of browser storage. Sessions are held in memory and require a new login after restart.
+The application runs as one replica with ephemeral Git working storage. Shared settings and per-account settings are durable in private Git and reconciled by Fleet into Kubernetes ConfigMaps; no database or persistent volume is needed. Shared permissions become active from the mounted ConfigMap. Personal choices are available after a confirmed push, and user-ConfigMap events refresh the Git snapshot when settings change externally. Anonymous preferences remain local to that browser. Sessions are held in memory and require a new login after restart.
 
 ## Development
 
