@@ -2,8 +2,28 @@ apiVersion: v1
 entries:
   kubeshelf:
   - apiVersion: v2
+    appVersion: 0.1.2
+    created: "2026-10-09T07:51:25.918819637Z"
+    description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
+      settings.
+    digest: 9f5b8005623e70ffd2808964b2098774085b5d5418643f4105ff7243ac7635a3
+    home: https://github.com/colaH16/KubeShelf
+    keywords:
+    - kubernetes
+    - dashboard
+    - ingress
+    - nodeport
+    - gitops
+    name: kubeshelf
+    sources:
+    - https://github.com/colaH16/KubeShelf
+    type: application
+    urls:
+    - https://colah16.github.io/KubeShelf/kubeshelf-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-10-09T07:34:22.236244715Z"
+    created: "2026-10-09T07:51:25.918595262Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 8076f17e106a5342ff2f5c099fc88f1580002b7d15dd041336b8d48b62e02b10
@@ -23,7 +43,7 @@ entries:
     version: 0.1.1
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-10-09T07:34:22.235921974Z"
+    created: "2026-10-09T07:51:25.918402423Z"
     description: A Kubernetes-aware app shelf with namespace access policies and GitOps-managed
       settings.
     digest: 7fdefac3d1ef99bf00d46ef7a0f173218d1ba5716c8634d3cbdc5595d8384b63
@@ -41,4 +61,4 @@ entries:
     urls:
     - https://colah16.github.io/KubeShelf/kubeshelf-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-09T07:34:22.235356327Z"
+generated: "2026-10-09T07:51:25.918073672Z"
