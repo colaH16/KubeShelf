@@ -9,7 +9,7 @@ A dashboard that discovers Kubernetes Ingress and NodePort services, alongside y
 - Finds Ingress URLs and groups aliases that resolve to the same namespace, Service and port. Override names, icons, URLs, grouping and visibility.
 - Offers one NodePort node/domain selector. Services using `externalTrafficPolicy: Local` keep their last eligible node when the selected node has no Ready backend.
 - Shows health from Kubernetes Pod Ready and EndpointSlice data. It does not probe web applications. Unknown or unavailable cluster data stays unknown.
-- Supports manual services, search, favorites, remembered addresses, copying links, hiding/restoring cards, and an explicit discovery review inbox.
+- Supports manual services, search, favorites, Git-backed default addresses, copying links, hiding/restoring cards, and an explicit discovery review inbox.
 - Shows namespaces only while they have discovered Ingress or NodePort endpoints. Existing namespaces return automatically when endpoints are added; unconfigured ones remain admin-only until reviewed.
 - Supports optional visitor login through OIDC and an authentik user/group directory. Administrators are identified by stable OIDC subjects, not mutable display names.
 - Supports independent Ingress/NodePort namespace hiding defaults. Services can inherit, explicitly show, or explicitly hide; namespaces stay in their management list with a default-hidden indicator. Hidden addresses remain available in the administrator hidden view.
@@ -17,6 +17,10 @@ A dashboard that discovers Kubernetes Ingress and NodePort services, alongside y
 - Filters unauthorized addresses and node information on the server before returning the catalog. This controls dashboard visibility; destination applications still need their own access control.
 
 Namespace visibility dialogs list discovered Ingress names, addresses, backing Services and NodePorts, including hidden services and indicators for visibility overrides. Ingress and NodePort tabs have independent visibility controls. Compact resource lists and help text scroll while visibility controls and Save stay in view. Service and address editors show the inherited visibility, its source, and selected groups/users next to the selector. Grouped addresses keep their original policy sources; the preview follows unsaved edits.
+
+Administrators can change the NodePort selector and service address selectors, then save all changed defaults with the bottom **Save as defaults** bar. No push occurs until Save is clicked. Selectors lock while saving; a failed save retains the choices. The bar disappears as soon as the push succeeds, while the apply status remains until Fleet delivers the mounted configuration. Saved defaults initialize new browsers and never grant access to a restricted address. Visitors can still choose a different address locally.
+
+Workspace views have direct URLs: `/`, `/favorites`, `/discovery`, `/namespaces`, and `/hidden`. Refresh, history navigation, and returning to a view after login are supported; management views require administrator access.
 
 ## Local demo
 
@@ -38,7 +42,7 @@ Visit `http://localhost:8080`. The login button opens a demo administrator sessi
 helm repo add kubeshelf https://colah16.github.io/KubeShelf
 helm repo update
 helm upgrade --install kubeshelf kubeshelf/kubeshelf \
-  --version 0.1.8 --namespace public-services --values private-values.yaml
+  --version 0.1.9 --namespace public-services --values private-values.yaml
 ```
 
 See [example values](examples/values.yaml), [chart defaults](charts/kubeshelf/values.yaml) and the [operations guide](docs/operations.md). Production requires an existing runtime ConfigMap, SSH credentials and pinned host keys, OIDC client credentials, and an authentik directory token. These belong in your private GitOps repository.
@@ -54,7 +58,7 @@ Editor → validate → Git commit and immediate push → Fleet reconciliation
 
 Saving waits for the push and prevents overlapping saves. In service editors, editing enables Save and disables review. Save persists the edits and acknowledges the displayed addresses together, clearing their NEW/CHANGED markers. With no unsaved changes, review acknowledges the addresses without changing their settings. Both actions are disabled while a request is in flight; failed requests preserve the edits and leave review markers unchanged. Editing can continue while Fleet applies a saved revision. The live catalog and permissions change only after the mounted ConfigMap changes. There is no timed batch of Git pushes or periodic application Git polling. Fleet's polling interval is only one part of propagation time; kubelet projection adds delay.
 
-The application runs as one replica with ephemeral Git working storage. Configuration is durable in Git; it needs no database or persistent volume. Browser preferences are local to each identity. Sessions are held in memory and require a new login after restart.
+The application runs as one replica with ephemeral Git working storage. Configuration is durable in Git; it needs no database or persistent volume. Favorites and visitor address choices are local browser preferences for each identity. Administrator-selected shared defaults are stored in the runtime ConfigMap in Git, independently of browser storage. Sessions are held in memory and require a new login after restart.
 
 ## Development
 

@@ -398,6 +398,11 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 	}
 	for _, card := range cards {
 		if len(card.Endpoints) > 0 {
+			for _, e := range card.Endpoints {
+				if e.ID == s.Apps[card.ID].DefaultEndpoint {
+					card.DefaultEndpoint = e.ID
+				}
+			}
 			out.Cards = append(out.Cards, *card)
 		}
 	}
@@ -406,6 +411,9 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 		if user.Admin || usedTargets[t.ID] {
 			t.Visibility = nil
 			out.Targets = append(out.Targets, t)
+			if t.ID == s.DefaultTarget {
+				out.DefaultTarget = t.ID
+			}
 		}
 	}
 	if user.Admin {
@@ -457,6 +465,9 @@ func changeSummary(old, next Settings) string {
 		if !ok || a.Name != before.Name {
 			fields = append(fields, "name")
 		}
+		if a.DefaultEndpoint != before.DefaultEndpoint {
+			fields = append(fields, "default address")
+		}
 		if a.Icon != before.Icon {
 			fields = append(fields, "icon")
 		}
@@ -485,6 +496,9 @@ func changeSummary(old, next Settings) string {
 	}
 	if !reflect.DeepEqual(old.Manual, next.Manual) {
 		parts = append(parts, "manual services")
+	}
+	if old.DefaultTarget != next.DefaultTarget {
+		parts = append(parts, "default NodePort target")
 	}
 	if !reflect.DeepEqual(old.Targets, next.Targets) {
 		parts = append(parts, "node domains")

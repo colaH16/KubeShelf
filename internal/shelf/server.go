@@ -128,11 +128,11 @@ func (s *Server) Handler() http.Handler {
 			if v.Role == "admin" {
 				u = Identity{Subject: "demo-admin", Username: "admin", Name: "Administrator", Groups: []string{"operators"}, Admin: true}
 			}
-			s.auth.newSession(w, r, u)
+			s.auth.newSession(w, r, u, "/")
 		})
 	}
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
+		if !isViewPath(r.URL.Path) {
 			http.FileServer(http.FS(s.assets)).ServeHTTP(w, r)
 			return
 		}

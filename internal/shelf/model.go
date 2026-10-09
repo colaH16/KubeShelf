@@ -133,14 +133,15 @@ type EndpointSettings struct {
 	Visibility *Policy `json:"visibility,omitempty"`
 }
 type AppSettings struct {
-	Name        string                      `json:"name,omitempty"`
-	Icon        string                      `json:"icon,omitempty"`
-	Description string                      `json:"description,omitempty"`
-	Hidden      bool                        `json:"hidden"` // Legacy true remains an explicit hide.
-	Display     string                      `json:"display,omitempty"`
-	Visibility  *Policy                     `json:"visibility,omitempty"`
-	Reviewed    map[string]string           `json:"reviewed,omitempty"`
-	Endpoints   map[string]EndpointSettings `json:"endpoints,omitempty"`
+	Name            string                      `json:"name,omitempty"`
+	Icon            string                      `json:"icon,omitempty"`
+	Description     string                      `json:"description,omitempty"`
+	Hidden          bool                        `json:"hidden"` // Legacy true remains an explicit hide.
+	Display         string                      `json:"display,omitempty"`
+	DefaultEndpoint string                      `json:"defaultEndpoint,omitempty"`
+	Visibility      *Policy                     `json:"visibility,omitempty"`
+	Reviewed        map[string]string           `json:"reviewed,omitempty"`
+	Endpoints       map[string]EndpointSettings `json:"endpoints,omitempty"`
 }
 type ManualApp struct {
 	ID   string      `json:"id"`
@@ -169,6 +170,7 @@ type Settings struct {
 	Apps               map[string]AppSettings `json:"apps"`
 	Manual             []ManualApp            `json:"manual"`
 	Targets            []Target               `json:"targets"`
+	DefaultTarget      string                 `json:"defaultTarget,omitempty"`
 	Assignments        map[string]string      `json:"assignments"`
 }
 
@@ -220,6 +222,9 @@ func ValidateSettings(s *Settings) error {
 	if s.Assignments == nil {
 		s.Assignments = map[string]string{}
 	}
+	if len(s.DefaultTarget) > 300 {
+		return fmt.Errorf("invalid default target")
+	}
 	if len(s.Apps) > 10000 || len(s.Manual) > 1000 || len(s.Targets) > 100 || len(s.Assignments) > 10000 {
 		return fmt.Errorf("too many settings entries")
 	}
@@ -242,6 +247,9 @@ func ValidateSettings(s *Settings) error {
 	for id, a := range s.Apps {
 		if id == "" || len(id) > 100 || len(a.Name) > 200 || len(a.Description) > 2000 || len(a.Icon) > 2048 {
 			return fmt.Errorf("invalid card settings")
+		}
+		if len(a.DefaultEndpoint) > 100 {
+			return fmt.Errorf("invalid default address")
 		}
 		if a.Display != "" && a.Display != "inherit" && a.Display != "show" && a.Display != "hide" {
 			return fmt.Errorf("invalid dashboard display setting")
@@ -386,16 +394,17 @@ type Endpoint struct {
 	Hidden      bool         `json:"hidden,omitempty"`
 }
 type Card struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Icon        string     `json:"icon"`
-	Description string     `json:"description"`
-	Source      string     `json:"source"`
-	Namespace   string     `json:"namespace,omitempty"`
-	Hidden      bool       `json:"hidden"`
-	New         bool       `json:"new"`
-	Changed     bool       `json:"changed"`
-	Endpoints   []Endpoint `json:"endpoints"`
+	DefaultEndpoint string     `json:"defaultEndpoint,omitempty"`
+	ID              string     `json:"id"`
+	Name            string     `json:"name"`
+	Icon            string     `json:"icon"`
+	Description     string     `json:"description"`
+	Source          string     `json:"source"`
+	Namespace       string     `json:"namespace,omitempty"`
+	Hidden          bool       `json:"hidden"`
+	New             bool       `json:"new"`
+	Changed         bool       `json:"changed"`
+	Endpoints       []Endpoint `json:"endpoints"`
 }
 type NamespaceInfo struct {
 	Name               string `json:"name"`
@@ -409,6 +418,7 @@ type NamespaceInfo struct {
 	NodePortPolicy     Policy `json:"nodePortPolicy"`
 }
 type Catalog struct {
+	DefaultTarget   string          `json:"defaultTarget,omitempty"`
 	Cards           []Card          `json:"cards"`
 	Targets         []Target        `json:"targets"`
 	Namespaces      []NamespaceInfo `json:"namespaces,omitempty"`

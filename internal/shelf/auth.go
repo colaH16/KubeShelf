@@ -157,8 +157,8 @@ type session struct {
 	Expires  time.Time
 }
 type loginAttempt struct {
-	Nonce, Verifier string
-	Expires         time.Time
+	Nonce, Verifier, ReturnTo string
+	Expires                   time.Time
 }
 type Auth struct {
 	cfg        Config
@@ -232,7 +232,7 @@ func (a *Auth) Identity(r *http.Request) (Identity, string) {
 	a.mu.Unlock()
 	return Identity{Groups: []string{}}, ""
 }
-func (a *Auth) newSession(w http.ResponseWriter, r *http.Request, u Identity) {
+func (a *Auth) newSession(w http.ResponseWriter, r *http.Request, u Identity, returnTo string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if old, err := r.Cookie(a.cookieName()); err == nil {
@@ -250,11 +250,12 @@ func (a *Auth) newSession(w http.ResponseWriter, r *http.Request, u Identity) {
 	id := randomID()
 	a.sessions[id] = session{Identity: u, CSRF: randomID(), Expires: time.Now().Add(time.Hour)}
 	a.setCookie(w, a.cookieName(), id, 3600)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, safeReturnTo(returnTo), http.StatusSeeOther)
 }
 func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
+	returnTo := safeReturnTo(r.URL.Query().Get("returnTo"))
 	if a.cfg.Demo {
-		a.newSession(w, r, Identity{Subject: "demo-admin", Name: "Administrator", Username: "admin", Groups: []string{"operators"}, Admin: true})
+		a.newSession(w, r, Identity{Subject: "demo-admin", Name: "Administrator", Username: "admin", Groups: []string{"operators"}, Admin: true}, returnTo)
 		return
 	}
 	_, cfg, err := a.oauth(r.Context())
@@ -274,7 +275,7 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "잠시 후 다시 시도해 주세요", http.StatusTooManyRequests)
 		return
 	}
-	a.attempts[state] = loginAttempt{Nonce: nonce, Verifier: verifier, Expires: time.Now().Add(5 * time.Minute)}
+	a.attempts[state] = loginAttempt{Nonce: nonce, Verifier: verifier, ReturnTo: returnTo, Expires: time.Now().Add(5 * time.Minute)}
 	a.mu.Unlock()
 	a.setCookie(w, a.cookieName()+"-login", state, 300)
 	http.Redirect(w, r, cfg.AuthCodeURL(state, oidc.Nonce(nonce), oauth2.S256ChallengeOption(verifier)), http.StatusFound)
@@ -327,7 +328,7 @@ func (a *Auth) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, u := range users.Users {
 		if u.Subject == verified.Subject {
-			a.newSession(w, r, Identity{Subject: u.Subject, Username: u.Username, Name: u.Name, Groups: u.Groups, Admin: contains(a.cfg.AdminSubjects, u.Subject)})
+			a.newSession(w, r, Identity{Subject: u.Subject, Username: u.Username, Name: u.Name, Groups: u.Groups, Admin: contains(a.cfg.AdminSubjects, u.Subject)}, pending.ReturnTo)
 			return
 		}
 	}
