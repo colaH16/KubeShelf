@@ -25,15 +25,17 @@ export default function Editor({ request, data, saving, onSave, onClose }: { req
   const card = request.kind === 'card' ? data.catalog.cards.find(c => c.id === request.card.id && c.source === request.card.source) || request.card : undefined;
   const manualID = request.kind === 'manual' ? newManualID : card?.source === 'custom' ? card.endpoints[0]?.appId : undefined;
   const manual = draft.manual.find(m => m.id === manualID);
-  // Review only the saved settings; the server records fingerprints after a successful save.
-  const review = () => { if (!card || saving || dirty) return; void persist(draft, card.endpoints.map(e => e.id)); };
+  const reviewEndpointIDs = card && card.source !== 'custom' ? card.endpoints.map(e => e.id) : [];
+  // Both actions acknowledge the displayed endpoints. The server fingerprints
+  // the submitted settings so edited addresses are reviewed in their saved form.
+  const review = () => { if (!card || saving || dirty) return; void persist(draft, reviewEndpointIDs); };
   const title = request.kind === 'targets' ? 'NodePort 도메인' : request.kind === 'namespace' ? '공개 범위' : request.kind === 'manual' ? '서비스 직접 추가' : '서비스 설정';
   const subtitle = request.kind === 'namespace' ? request.namespace : card?.name;
   const editID = card?.id || manualID;
   const meta = editID ? draft.apps[editID] || { hidden: false } : undefined;
   const serviceIDs = [...new Set(card?.endpoints.map(e => e.appId) || (editID ? [editID] : []))];
   const servicePolicy = servicePolicyState(draft, serviceIDs);
-  return <Modal className={request.kind === 'namespace' ? 'namespace-modal' : ''} title={title} subtitle={subtitle} onClose={close} footer={<><span className="save-note">{request.kind === 'namespace' ? (saving ? '저장 중…' : dirty ? '변경사항 있음' : '저장됨') : (saving ? 'Git에 저장하는 중…' : dirty ? '저장하지 않은 변경사항' : 'Git에 저장됨')}</span><div className="footer-actions">{card && card.source !== 'custom' && <button className="button secondary" disabled={saving || dirty} title={dirty ? '변경사항을 먼저 저장해 주세요' : 'NEW·CHANGED 표시를 확인 완료로 변경합니다'} onClick={review}><Check size={16}/>설정 확인 완료</button>}<button className="button primary" disabled={saving || !dirty} onClick={() => void persist()}><Save size={16}/>{saving ? '저장 중…' : '저장'}</button></div></>}>
+  return <Modal className={request.kind === 'namespace' ? 'namespace-modal' : ''} title={title} subtitle={subtitle} onClose={close} footer={<><span className="save-note">{request.kind === 'namespace' ? (saving ? '저장 중…' : dirty ? '변경사항 있음' : '저장됨') : (saving ? 'Git에 저장하는 중…' : dirty ? '저장하지 않은 변경사항' : 'Git에 저장됨')}</span><div className="footer-actions">{card && card.source !== 'custom' && <button className="button secondary" disabled={saving || dirty} title={dirty ? '변경사항을 먼저 저장해 주세요' : 'NEW·CHANGED 표시를 확인 완료로 변경합니다'} onClick={review}><Check size={16}/>설정 확인 완료</button>}<button className="button primary" disabled={saving || !dirty} onClick={() => void persist(draft, reviewEndpointIDs)}><Save size={16}/>{saving ? '저장 중…' : '저장'}</button></div></>}>
     {error && <div role="alert" className="error-box">{error}{error.includes('다른 곳') && <p>다른 창이나 Git에서 변경된 설정을 덮어쓰지 않았습니다. 입력 내용을 확인한 뒤 창을 다시 열어 최신 설정을 불러와 주세요.</p>}</div>}
     {editID && meta && <>
       <div className="editor-preview"><span className="app-icon tone-amber"><AppIcon name={meta.name || manual?.name || card?.name || 'Service'} icon={meta.icon || ''}/></span><div><strong>{meta.name || manual?.name || card?.name || '새 서비스'}</strong><small>표시 이름과 아이콘을 원하는 대로 바꿔보세요.</small></div></div>
