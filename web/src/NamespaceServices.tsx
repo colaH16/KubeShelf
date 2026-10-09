@@ -1,4 +1,5 @@
 import { EyeOff } from 'lucide-react';
+import { endpointHidden } from './display';
 import type { Card, Settings } from './types';
 
 export default function NamespaceServices({ namespace, kind, cards, settings }: { namespace: string; kind: 'ingress' | 'nodeport'; cards: Card[]; settings: Settings }) {
@@ -15,7 +16,7 @@ export default function NamespaceServices({ namespace, kind, cards, settings }: 
         const app = settings.apps[e.appId];
         const override = app?.endpoints?.[e.id]?.visibility || app?.visibility;
         return <li key={e.id}>
-          <div className="namespace-service-title"><strong>{card.name}</strong>{card.hidden && <span><EyeOff size={11}/>숨김</span>}{e.local && <span className="local-badge">Local</span>}</div>
+          <div className="namespace-service-title"><strong>{card.name}</strong>{endpointHidden(settings, e) && <span><EyeOff size={11}/>숨김</span>}{e.local && <span className="local-badge">Local</span>}</div>
           <p className="namespace-service-address">{kind === 'ingress' ? e.url || e.label : `${e.scheme === 'tcp' ? e.protocol || 'TCP' : e.scheme.toUpperCase()} :${e.nodePort}`}</p>
           {e.ingresses?.length ? <p className="muted">Ingress · {e.ingresses.join(', ')}</p> : null}
           {(kind === 'ingress' || card.name !== e.service) && <p className="muted">Service · {e.service}{e.port ? `:${e.port}` : ''}</p>}

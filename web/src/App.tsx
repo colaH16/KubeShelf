@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, ArrowDownToLine, ArrowUpRight, Boxes, Check, ChevronDown, Copy, EyeOff, FolderTree, Globe, Inbox, Layers3, LoaderCircle, LogIn, LogOut, Menu, Network, Pencil, Plus, Search, Server, Settings2, ShieldCheck, Star, X } from 'lucide-react';
 import Editor, { type EditRequest } from './Editor';
 import NamespaceRow from './NamespaceRow';
+import { displayCards, setServiceDisplay } from './display';
 import { AppIcon } from './ui';
 import { chooseTarget } from './selection';
 import type { AdminState, ApplyStatus, Card, Catalog, Endpoint, Settings } from './types';
@@ -68,7 +69,7 @@ export default function App() {
       return { baseCommit: result.baseCommit, revision: result.status.desiredRevision, settings: result.settings };
     } finally { saveLock.current = false; setSaving(false); }
   };
-  const restore = async (card: Card) => { try { const data = await api<AdminState>('/api/admin/state'); const next = structuredClone(data.settings); for (const id of new Set([card.id, ...card.endpoints.map(e => e.appId)])) if (next.apps[id]) next.apps[id].hidden = false; await save(next, data.baseCommit); } catch (e) { notice((e as Error).message); } };
+  const restore = async (card: Card) => { try { const data = await api<AdminState>('/api/admin/state'); const next = structuredClone(data.settings); setServiceDisplay(next, card.id, card.endpoints, 'show'); await save(next, data.baseCommit); } catch (e) { notice((e as Error).message); } };
   const logout = async () => {
     if (loggingOut.current) return;
     loggingOut.current = true; ++requestNumber.current;
@@ -79,11 +80,12 @@ export default function App() {
   };
   const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); notice('주소를 복사했어요'); } catch { notice('주소를 복사하지 못했어요'); } };
   const favorite = (id: string) => setPrefs(p => ({ ...p, favorites: p.favorites.includes(id) ? p.favorites.filter(v => v !== id) : [...p.favorites, id] }));
-  const counts = { total: catalog?.cards.filter(c => !c.hidden).length || 0, favorites: catalog?.cards.filter(c => !c.hidden && prefs.favorites.includes(c.id)).length || 0, discovery: catalog?.cards.filter(c => c.new || c.changed).length || 0, namespaces: catalog?.namespaces?.filter(n => !n.configured).length || 0, hidden: catalog?.cards.filter(c => c.hidden).length || 0 };
+  const shownCards = displayCards(catalog?.cards || [], false);
+  const hiddenCards = displayCards(catalog?.cards || [], true);
+  const counts = { total: shownCards.length, favorites: shownCards.filter(c => prefs.favorites.includes(c.id)).length, discovery: shownCards.filter(c => c.new || c.changed).length, namespaces: catalog?.namespaces?.filter(n => !n.configured).length || 0, hidden: hiddenCards.length };
   const move = (v: View) => { setView(v); setMobile(false); };
   const titles: Record<View, [string, string]> = { all: ['내 서비스', '흩어져 있던 앱을, 한 곳에.'], favorites: ['즐겨찾기', '자주 찾는 서비스에 더 빠르게.'], discovery: ['새로 발견했어요', '클러스터에서 찾은 서비스와 바뀐 주소를 확인하세요.'], namespaces: ['네임스페이스', '새로 발견되는 서비스의 기본 공개 범위를 관리하세요.'], hidden: ['숨긴 서비스', '필요할 때 다시 대시보드에 꺼내 놓으세요.'] };
-  const cards = (catalog?.cards || []).filter(c => {
-    if (view === 'hidden' ? !c.hidden : c.hidden) return false;
+  const cards = (view === 'hidden' ? hiddenCards : shownCards).filter(c => {
     if (view === 'favorites' && !prefs.favorites.includes(c.id)) return false;
     if (view === 'discovery' && !c.new && !c.changed) return false;
     const text = [c.name, c.description, c.namespace, ...c.endpoints.flatMap(e => [e.label, e.url, e.service])].join(' ').toLowerCase();

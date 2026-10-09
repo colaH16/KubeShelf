@@ -25,8 +25,9 @@ export default function NamespacePolicyEditor({ namespace, cards, directory, set
     </div>
     <div className="namespace-policy-panel" id="namespace-policy-panel" role="tabpanel" aria-labelledby={'namespace-tab-' + kind}>
       <div className="namespace-policy-controls">
+        <label className="check-row namespace-hide-control"><input type="checkbox" aria-label={name + ' 기본 숨김'} checked={!!policy?.hidden} onChange={e => onChange(kind, { ...(policy || { mode: 'admin' }), hidden: e.target.checked })}/>대시보드에서 기본 숨기기</label>
         <div className="namespace-policy-caption"><span>기본 공개 범위</span>{!policy && <button className="text-button" onClick={() => onChange(kind, { mode: 'admin' })}>관리자만으로 확인</button>}</div>
-        <PolicyEditor key={kind} compact inherit={false} label={name + ' 공개 범위'} directory={directory} value={policy || { mode: 'admin' }} onChange={p => onChange(kind, p!)}/>
+        <PolicyEditor key={kind} compact inherit={false} label={name + ' 공개 범위'} directory={directory} value={policy || { mode: 'admin' }} onChange={p => onChange(kind, { ...p!, hidden: policy?.hidden })}/>
       </div>
       <NamespaceServices key={kind} namespace={namespace} kind={kind} cards={cards} settings={settings}/>
     </div>

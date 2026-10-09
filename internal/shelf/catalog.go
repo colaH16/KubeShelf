@@ -127,6 +127,9 @@ func endpointPolicy(s Settings, e Endpoint) Policy {
 	if a.Visibility != nil {
 		return *a.Visibility
 	}
+	return namespacePolicy(s, e)
+}
+func namespacePolicy(s Settings, e Endpoint) Policy {
 	// NodePorts expose node addresses and never inherit an Ingress namespace policy.
 	policies := s.Namespaces
 	if e.Kind == "nodeport" {
@@ -136,6 +139,29 @@ func endpointPolicy(s Settings, e Endpoint) Policy {
 		return p
 	}
 	return Policy{Mode: "admin"}
+}
+func appDisplay(a AppSettings) string {
+	if a.Display != "" {
+		return a.Display
+	}
+	if a.Hidden {
+		return "hide"
+	}
+	return "inherit"
+}
+func endpointHidden(s Settings, e Endpoint) bool {
+	// A hidden presentation group still hides all of its addresses. Showing a
+	// group never overrides the original service defaults of newly grouped URLs.
+	if group := s.Assignments[e.ID]; group != "" && appDisplay(s.Apps[group]) == "hide" {
+		return true
+	}
+	switch appDisplay(s.Apps[e.AppID]) {
+	case "hide":
+		return true
+	case "show":
+		return false
+	}
+	return namespacePolicy(s, e).Hidden
 }
 func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog {
 	out := Catalog{Cards: []Card{}, Targets: []Target{}, Connected: snap.Connected, UpdatedAt: snap.UpdatedAt, Identity: user, Demo: cfg.Demo, AppliedRevision: s.Revision}
@@ -286,7 +312,8 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 		}
 		namespaceServices[e.Namespace][e.AppID] = true
 		a := s.Apps[e.AppID]
-		if !endpointPolicy(s, e).Allows(user) || a.Hidden && !user.Admin {
+		hidden := endpointHidden(s, e)
+		if !endpointPolicy(s, e).Allows(user) || hidden && !user.Admin {
 			continue
 		}
 		eo := a.Endpoints[e.ID]
@@ -339,7 +366,7 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 			if name == "" {
 				name = e.Service
 			}
-			card = &Card{ID: group, Name: name, Icon: meta.Icon, Description: meta.Description, Source: e.Kind, Namespace: e.Namespace, Hidden: a.Hidden || meta.Hidden, Endpoints: []Endpoint{}}
+			card = &Card{ID: group, Name: name, Icon: meta.Icon, Description: meta.Description, Source: e.Kind, Namespace: e.Namespace, Hidden: true, Endpoints: []Endpoint{}}
 			if card.Icon == "" {
 				card.Icon = a.Icon
 			}
@@ -348,8 +375,9 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 			}
 			cards[groupKey] = card
 		}
-		if card.Hidden && !user.Admin {
-			continue
+		card.Hidden = card.Hidden && hidden
+		if user.Admin {
+			e.Hidden = hidden
 		}
 		for _, t := range e.Targets {
 			usedTargets[t.TargetID] = true
@@ -435,7 +463,7 @@ func changeSummary(old, next Settings) string {
 		if a.Description != before.Description {
 			fields = append(fields, "description")
 		}
-		if a.Hidden != before.Hidden {
+		if a.Hidden != before.Hidden || a.Display != before.Display {
 			fields = append(fields, "hidden")
 		}
 		if !reflect.DeepEqual(a.Visibility, before.Visibility) {

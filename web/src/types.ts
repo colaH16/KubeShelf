@@ -1,12 +1,13 @@
-export type Policy = { mode: 'public' | 'restricted' | 'admin'; groups?: string[]; users?: string[] };
+export type DisplayMode = 'inherit' | 'show' | 'hide';
+export type Policy = { hidden?: boolean; mode: 'public' | 'restricted' | 'admin'; groups?: string[]; users?: string[] };
 export type Identity = { subject: string; name: string; username: string; groups: string[]; admin: boolean };
 export type Health = { state: 'healthy' | 'partial' | 'down' | 'unknown'; ready: number; total: number; reason: string };
 export type Connection = { targetId: string; name: string; url: string; address: string; nodeName?: string };
-export type Endpoint = { id: string; appId: string; label: string; url: string; kind: string; namespace?: string; ingresses?: string[]; service?: string; port?: string; nodePort?: number; scheme: string; protocol?: string; local: boolean; needsURL: boolean; health: Health; targets: Connection[]; fingerprint?: string };
+export type Endpoint = { id: string; appId: string; label: string; url: string; kind: string; namespace?: string; ingresses?: string[]; service?: string; port?: string; nodePort?: number; scheme: string; protocol?: string; local: boolean; needsURL: boolean; health: Health; targets: Connection[]; fingerprint?: string; hidden?: boolean };
 export type Card = { id: string; name: string; icon: string; description: string; source: string; namespace?: string; hidden: boolean; new: boolean; changed: boolean; endpoints: Endpoint[] };
 export type Target = { id: string; name: string; host: string; nodeName?: string; manual: boolean; visibility?: Policy; tcpEnabled: boolean };
 export type EndpointSettings = { label?: string; url?: string; scheme?: string; visibility?: Policy };
-export type AppSettings = { name?: string; icon?: string; description?: string; hidden: boolean; visibility?: Policy; reviewed?: Record<string, string>; endpoints?: Record<string, EndpointSettings> };
+export type AppSettings = { name?: string; icon?: string; description?: string; hidden: boolean; display?: DisplayMode; visibility?: Policy; reviewed?: Record<string, string>; endpoints?: Record<string, EndpointSettings> };
 export type Settings = { schemaVersion: number; revision: string; namespaces: Record<string, Policy>; nodePortNamespaces: Record<string, Policy>; apps: Record<string, AppSettings>; manual: { id: string; name: string; urls: { id: string; label: string; url: string }[] }[]; targets: Target[]; assignments: Record<string, string> };
 export type NamespaceInfo = { name: string; configured: boolean; services: number; policy: Policy; ingressConfigured: boolean; ingressServices: number; nodePortConfigured: boolean; nodePortServices: number; nodePortPolicy: Policy };
 export type Catalog = { cards: Card[]; targets: Target[]; namespaces?: NamespaceInfo[]; connected: boolean; updatedAt: string; problem?: string; identity: Identity; csrf?: string; demo: boolean; version: string; appliedRevision: string };

@@ -91,6 +91,8 @@ func contains(in []string, s string) bool {
 }
 
 type Policy struct {
+	// Hidden is the dashboard default for namespace policies; access remains separate.
+	Hidden bool     `json:"hidden,omitempty"`
 	Mode   string   `json:"mode"`
 	Groups []string `json:"groups,omitempty"`
 	Users  []string `json:"users,omitempty"`
@@ -134,7 +136,8 @@ type AppSettings struct {
 	Name        string                      `json:"name,omitempty"`
 	Icon        string                      `json:"icon,omitempty"`
 	Description string                      `json:"description,omitempty"`
-	Hidden      bool                        `json:"hidden"`
+	Hidden      bool                        `json:"hidden"` // Legacy true remains an explicit hide.
+	Display     string                      `json:"display,omitempty"`
 	Visibility  *Policy                     `json:"visibility,omitempty"`
 	Reviewed    map[string]string           `json:"reviewed,omitempty"`
 	Endpoints   map[string]EndpointSettings `json:"endpoints,omitempty"`
@@ -239,6 +242,9 @@ func ValidateSettings(s *Settings) error {
 	for id, a := range s.Apps {
 		if id == "" || len(id) > 100 || len(a.Name) > 200 || len(a.Description) > 2000 || len(a.Icon) > 2048 {
 			return fmt.Errorf("invalid card settings")
+		}
+		if a.Display != "" && a.Display != "inherit" && a.Display != "show" && a.Display != "hide" {
+			return fmt.Errorf("invalid dashboard display setting")
 		}
 		if err := validatePolicy(a.Visibility); err != nil {
 			return err
@@ -377,6 +383,7 @@ type Endpoint struct {
 	Health      Health       `json:"health"`
 	Targets     []Connection `json:"targets"`
 	Fingerprint string       `json:"fingerprint,omitempty"`
+	Hidden      bool         `json:"hidden,omitempty"`
 }
 type Card struct {
 	ID          string     `json:"id"`

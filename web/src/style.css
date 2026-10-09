@@ -64,3 +64,15 @@
 .inherited-policy-row>strong{color:#d2dfef;font-size:12px;font-weight:550}
 .inherited-policy-row>small{color:#b2c6df;font-size:11px}
 .policy-mixed-note{margin-top:8px}
+
+/* Dashboard placement inherits independently of access permissions. */
+.namespace-hide-control{margin:0 0 9px;min-height:24px}
+.display-editor{min-width:0;margin:0 0 20px;padding:0;border:0;font-size:11px;color:#acb8ca}
+.display-editor>legend{padding:0;margin-bottom:8px}
+.display-options{display:flex;gap:6px;flex-wrap:wrap}
+.display-options>label{display:flex;align-items:center;justify-content:center;gap:6px;flex:1;padding:8px 6px;border:1px solid #354153;border-radius:7px;background:#171e28;cursor:pointer;white-space:nowrap}
+.display-options>label.selected{color:#f0bd87;border-color:#8f7352;background:#393027}
+.display-options input{margin:0;width:13px;height:13px;accent-color:var(--accent)}
+.display-inheritance{font-size:10px;color:#97a8be;margin-top:8px;overflow-wrap:anywhere}
+.display-inheritance strong{font-weight:550;color:#d2dfef}
+.display-editor>.muted{font-size:10px;margin-top:7px}
