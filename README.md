@@ -37,7 +37,7 @@ Visit `http://localhost:8080`. The login button opens a demo administrator sessi
 helm repo add kubeshelf https://colah16.github.io/KubeShelf
 helm repo update
 helm upgrade --install kubeshelf kubeshelf/kubeshelf \
-  --version 0.1.5 --namespace public-services --values private-values.yaml
+  --version 0.1.6 --namespace public-services --values private-values.yaml
 ```
 
 See [example values](examples/values.yaml), [chart defaults](charts/kubeshelf/values.yaml) and the [operations guide](docs/operations.md). Production requires an existing runtime ConfigMap, SSH credentials and pinned host keys, OIDC client credentials, and an authentik directory token. These belong in your private GitOps repository.
@@ -51,7 +51,7 @@ Editor → validate → Git commit and immediate push → Fleet reconciliation
        → ConfigMap projection → application reload → applied revision confirmed
 ```
 
-Saving waits for the push and prevents overlapping saves. Editing can continue while Fleet applies a saved revision. The live catalog and permissions change only after the mounted ConfigMap changes. There is no timed batch of Git pushes or periodic application Git polling. Fleet's polling interval is only one part of propagation time; kubelet projection adds delay.
+Saving waits for the push and prevents overlapping saves. In service editors, editing enables Save and disables review; with no unsaved changes, review can clear NEW/CHANGED markers. Both actions are disabled while a request is in flight, and failed review requests do not mark entries reviewed locally. Editing can continue while Fleet applies a saved revision. The live catalog and permissions change only after the mounted ConfigMap changes. There is no timed batch of Git pushes or periodic application Git polling. Fleet's polling interval is only one part of propagation time; kubelet projection adds delay.
 
 The application runs as one replica with ephemeral Git working storage. Configuration is durable in Git; it needs no database or persistent volume. Browser preferences are local to each identity. Sessions are held in memory and require a new login after restart.
 
