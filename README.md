@@ -14,6 +14,8 @@ A dashboard that discovers Kubernetes Ingress and NodePort services, alongside y
 - Supports optional visitor login through OIDC and an authentik user/group directory. Administrators are identified by stable OIDC subjects, not mutable display names.
 - Filters unauthorized addresses and node information on the server before returning the catalog. This controls dashboard visibility; destination applications still need their own access control.
 
+Namespace visibility dialogs list discovered Ingress names, addresses, backing Services and NodePorts, including hidden services and indicators for visibility overrides.
+
 ## Local demo
 
 Requires Node 24, Go 1.25+ and Git. The demo uses synthetic data and needs no Kubernetes, authentik or Git server.
@@ -34,7 +36,7 @@ Visit `http://localhost:8080`. The login button opens a demo administrator sessi
 helm repo add kubeshelf https://colah16.github.io/KubeShelf
 helm repo update
 helm upgrade --install kubeshelf kubeshelf/kubeshelf \
-  --version 0.1.1 --namespace public-services --values private-values.yaml
+  --version 0.1.2 --namespace public-services --values private-values.yaml
 ```
 
 See [example values](examples/values.yaml), [chart defaults](charts/kubeshelf/values.yaml) and the [operations guide](docs/operations.md). Production requires an existing runtime ConfigMap, SSH credentials and pinned host keys, OIDC client credentials, and an authentik directory token. These belong in your private GitOps repository.

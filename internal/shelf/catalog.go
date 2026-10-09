@@ -194,6 +194,9 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 				if ok {
 					e.Health = serviceHealth(snap, svc, p)
 				}
+				if user.Admin {
+					e.Ingresses = sortedUnique(append(endpoints[id].Ingresses, ing.Name))
+				}
 				endpoints[id] = e
 			}
 		}

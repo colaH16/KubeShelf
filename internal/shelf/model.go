@@ -354,6 +354,7 @@ type Endpoint struct {
 	URL         string       `json:"url"`
 	Kind        string       `json:"kind"`
 	Namespace   string       `json:"namespace,omitempty"`
+	Ingresses   []string     `json:"ingresses,omitempty"`
 	Service     string       `json:"service,omitempty"`
 	Port        string       `json:"port,omitempty"`
 	NodePort    int32        `json:"nodePort,omitempty"`

@@ -68,6 +68,42 @@ func TestPerAddressPolicyWinsAndHiddenCannotLeak(t *testing.T) {
 		t.Fatal("hidden service leaked")
 	}
 }
+
+func TestIngressResourceNamesForAdminReview(t *testing.T) {
+	cfg := demoConfig()
+	snap := NewDemoSource().Snapshot()
+	st := EmptySettings()
+	st.Namespaces["public-services"] = Policy{Mode: "public"}
+	before := findCard(t, BuildCatalog(snap, st, cfg, Identity{Admin: true}), "nextcloud")
+	reviewed := map[string]string{}
+	for _, e := range before.Endpoints {
+		reviewed[e.ID] = e.Fingerprint
+	}
+	st.Apps[before.ID] = AppSettings{Reviewed: reviewed}
+	duplicate := snap.Ingresses[0].DeepCopy()
+	duplicate.Name = "nextcloud-other-controller"
+	// Two ingress objects and repeated rules may describe the same address.
+	duplicate.Spec.Rules = append(duplicate.Spec.Rules, duplicate.Spec.Rules[0])
+	snap.Ingresses = append(snap.Ingresses, *duplicate)
+	card := findCard(t, BuildCatalog(snap, st, cfg, Identity{Admin: true}), "nextcloud")
+	if len(card.Endpoints) != 2 || card.New || card.Changed {
+		t.Fatal("resource names changed address grouping or existing review state")
+	}
+	for _, e := range card.Endpoints {
+		want := "nextcloud-alias"
+		if e.URL == "https://cloud.example.com/" {
+			want = "nextcloud,nextcloud-other-controller"
+		}
+		if strings.Join(e.Ingresses, ",") != want {
+			t.Fatalf("resource names for %s: got %v, want %s", e.URL, e.Ingresses, want)
+		}
+	}
+	anonymous, _ := json.Marshal(BuildCatalog(snap, st, cfg, Identity{}))
+	if strings.Contains(string(anonymous), "ingresses") || strings.Contains(string(anonymous), duplicate.Name) {
+		t.Fatal("admin resource metadata leaked to an anonymous visitor")
+	}
+}
+
 func TestNodePortLocalOnlyOffersReadyBackendNodes(t *testing.T) {
 	cfg := demoConfig()
 	snap := NewDemoSource().Snapshot()
