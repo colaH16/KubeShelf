@@ -10,7 +10,7 @@ A dashboard that discovers Kubernetes Ingress and NodePort services, alongside y
 - Offers one NodePort node/domain selector. Services using `externalTrafficPolicy: Local` keep their last eligible node when the selected node has no Ready backend.
 - Shows health from Kubernetes Pod Ready and EndpointSlice data. It does not probe web applications. Unknown or unavailable cluster data stays unknown.
 - Supports manual services, search, favorites, remembered addresses, copying links, hiding/restoring cards, and an explicit discovery review inbox.
-- Keeps unconfigured namespaces admin-only and lists them for review, including empty namespaces.
+- Shows namespaces only while they have discovered Ingress or NodePort endpoints. Existing namespaces return automatically when endpoints are added; unconfigured ones remain admin-only until reviewed.
 - Supports optional visitor login through OIDC and an authentik user/group directory. Administrators are identified by stable OIDC subjects, not mutable display names.
 - Filters unauthorized addresses and node information on the server before returning the catalog. This controls dashboard visibility; destination applications still need their own access control.
 
@@ -34,7 +34,7 @@ Visit `http://localhost:8080`. The login button opens a demo administrator sessi
 helm repo add kubeshelf https://colah16.github.io/KubeShelf
 helm repo update
 helm upgrade --install kubeshelf kubeshelf/kubeshelf \
-  --version 0.1.0 --namespace public-services --values private-values.yaml
+  --version 0.1.1 --namespace public-services --values private-values.yaml
 ```
 
 See [example values](examples/values.yaml), [chart defaults](charts/kubeshelf/values.yaml) and the [operations guide](docs/operations.md). Production requires an existing runtime ConfigMap, SSH credentials and pinned host keys, OIDC client credentials, and an authentik directory token. These belong in your private GitOps repository.

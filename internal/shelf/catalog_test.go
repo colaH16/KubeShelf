@@ -7,6 +7,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func demoConfig() Config {
@@ -106,19 +107,15 @@ func TestNodePortLocalOnlyOffersReadyBackendNodes(t *testing.T) {
 		t.Fatal("stale health remained trusted")
 	}
 }
-func TestNamespaceInboxIncludesEmptyAndReviewIsExplicit(t *testing.T) {
+func TestNamespaceInboxExcludesEmptyAndReviewIsExplicit(t *testing.T) {
 	cfg := demoConfig()
 	snap := NewDemoSource().Snapshot()
 	st := EmptySettings()
 	cat := BuildCatalog(snap, st, cfg, Identity{Admin: true})
-	found := false
 	for _, n := range cat.Namespaces {
-		if n.Name == "new-project" && !n.Configured && n.Services == 0 {
-			found = true
+		if n.Name == "new-project" || n.Services == 0 {
+			t.Fatal("namespace without discovered endpoints appeared in the inbox")
 		}
-	}
-	if !found {
-		t.Fatal("empty unconfigured namespace absent")
 	}
 	card := findCard(t, cat, "nextcloud")
 	if !card.New {
@@ -140,6 +137,86 @@ func TestNamespaceInboxIncludesEmptyAndReviewIsExplicit(t *testing.T) {
 	snap.Pods[0].ResourceVersion = "new-rollout"
 	if findCard(t, BuildCatalog(snap, st, cfg, Identity{Admin: true}), "nextcloud").Changed {
 		t.Fatal("pod update invalidated address review")
+	}
+}
+
+func TestExistingNamespaceReturnsWhenServicesAreExposed(t *testing.T) {
+	for _, kind := range []string{"ingress", "nodeport"} {
+		for _, configured := range []bool{false, true} {
+			name := kind + "/unconfigured"
+			if configured {
+				name = kind + "/configured"
+			}
+			t.Run(name, func(t *testing.T) {
+				cfg := demoConfig()
+				st := EmptySettings()
+				policy := Policy{Mode: "restricted", Groups: []string{"operators"}}
+				if configured {
+					st.Namespaces["existing"] = policy
+				}
+				base := Snapshot{Connected: true,
+					Namespaces: []core.Namespace{{ObjectMeta: metav1.ObjectMeta{Name: "existing", UID: "same-namespace"}}},
+					Services:   []core.Service{{ObjectMeta: metav1.ObjectMeta{Name: "internal", Namespace: "existing"}, Spec: core.ServiceSpec{Type: core.ServiceTypeClusterIP, Ports: []core.ServicePort{{Port: 80}}}}},
+				}
+				admin := Identity{Admin: true}
+				assertEmpty := func() {
+					t.Helper()
+					cat := BuildCatalog(base, st, cfg, admin)
+					if len(cat.Namespaces) != 0 || len(cat.Cards) != 0 {
+						t.Fatal("ClusterIP-only namespace should be automatically hidden")
+					}
+				}
+				expose := func(service string) Snapshot {
+					snap := base
+					svc := base.Services[0].DeepCopy()
+					svc.Name = service
+					if kind == "nodeport" {
+						svc.Spec.Type = core.ServiceTypeNodePort
+						svc.Spec.Ports[0].NodePort = 31080
+					}
+					snap.Services = []core.Service{*svc}
+					if kind == "ingress" {
+						snap.Ingresses = []networking.Ingress{{ObjectMeta: metav1.ObjectMeta{Name: service, Namespace: "existing"}, Spec: networking.IngressSpec{Rules: []networking.IngressRule{{Host: service + ".example.com", IngressRuleValue: networking.IngressRuleValue{HTTP: &networking.HTTPIngressRuleValue{Paths: []networking.HTTPIngressPath{{Path: "/", Backend: networking.IngressBackend{Service: &networking.IngressServiceBackend{Name: service, Port: networking.ServiceBackendPort{Number: 80}}}}}}}}}}}}
+					}
+					return snap
+				}
+				assertDiscovered := func(snap Snapshot, service string) Card {
+					t.Helper()
+					cat := BuildCatalog(snap, st, cfg, admin)
+					if len(cat.Namespaces) != 1 || cat.Namespaces[0].Name != "existing" || cat.Namespaces[0].Services != 1 {
+						t.Fatal("existing namespace did not appear when an endpoint was added")
+					}
+					ns := cat.Namespaces[0]
+					if ns.Configured != configured {
+						t.Fatal("stored namespace review status changed")
+					}
+					if configured && (ns.Policy.Mode != policy.Mode || !contains(ns.Policy.Groups, "operators")) {
+						t.Fatal("stored visibility policy was lost")
+					}
+					if !configured && ns.Policy.Mode != "admin" {
+						t.Fatal("unconfigured namespace must remain admin-only")
+					}
+					card := findCard(t, cat, service)
+					if !card.New {
+						t.Fatal("new endpoint was missing from discovery in an existing namespace")
+					}
+					return card
+				}
+				assertEmpty()
+				first := expose("first-service")
+				card := assertDiscovered(first, "first-service")
+				reviewed := map[string]string{}
+				for _, e := range card.Endpoints {
+					reviewed[e.ID] = e.Fingerprint
+				}
+				st.Apps[card.ID] = AppSettings{Reviewed: reviewed}
+				if findCard(t, BuildCatalog(first, st, cfg, admin), "first-service").New {
+					t.Fatal("explicit service review did not clear discovery")
+				}
+				assertEmpty() // Last endpoint removed; namespace itself still exists.
+				assertDiscovered(expose("later-service"), "later-service")
+			})
+		}
 	}
 }
 func TestPolicyIsFailClosed(t *testing.T) {

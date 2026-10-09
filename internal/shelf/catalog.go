@@ -370,6 +370,11 @@ func BuildCatalog(snap Snapshot, s Settings, cfg Config, user Identity) Catalog 
 	if user.Admin {
 		out.Namespaces = []NamespaceInfo{}
 		for _, n := range snap.Namespaces {
+			// Namespace visibility follows discovered endpoints, not namespace age.
+			// Keep stored policies intact while a namespace has no exposed services.
+			if len(namespaceServices[n.Name]) == 0 {
+				continue
+			}
 			p, ok := s.Namespaces[n.Name]
 			if !ok {
 				p = Policy{Mode: "admin"}
